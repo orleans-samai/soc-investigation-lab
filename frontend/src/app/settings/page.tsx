@@ -52,7 +52,7 @@ export default function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Lab Settings" description="Environment status, the asset & identity inventory used to enrich detections, and lab maintenance." />
+      <PageHeader title="Lab settings" description="The inventory, threat-intel feed and change windows that give detections context." />
       <div className="grid gap-4 xl:grid-cols-3">
         <div className="min-w-0 space-y-4">
           <Panel>
@@ -75,7 +75,7 @@ export default function SettingsPage() {
                 />
               )}
               {status?.storage.recovered_collections.length ? (
-                <p className="mt-3 flex items-start gap-2 rounded-md border border-high/30 bg-high/6 p-2 text-xs text-high">
+                <p className="mt-3 flex items-start gap-2 rounded-md border border-high/30 bg-high/8 p-2 text-xs text-high">
                   <ShieldAlert className="size-3.5 shrink-0" /> Corrupted state files were quarantined at startup: {status.storage.recovered_collections.join(", ")}
                 </p>
               ) : null}
@@ -87,7 +87,7 @@ export default function SettingsPage() {
               {status &&
                 Object.entries(status.counts).map(([k, v]) => (
                   <div key={k} className="bg-surface px-4 py-2.5">
-                    <div className="text-[11px] capitalize text-muted">{k.replace(/_/g, " ")}</div>
+                    <div className="text-2xs capitalize text-muted">{k.replace(/_/g, " ")}</div>
                     <div className="font-mono text-base tabular-nums">{nf.format(v)}</div>
                   </div>
                 ))}
@@ -96,7 +96,7 @@ export default function SettingsPage() {
           <Panel className="border-critical/30">
             <PanelHeader title="Danger zone" />
             <div className="space-y-3 p-4">
-              <p className="text-[13px] text-muted">
+              <p className="text-sm text-muted">
                 Reset the lab to the seed dataset. Imported logs, simulation runs, alerts, incidents, notes and rule tuning are permanently discarded.
               </p>
               <ConfirmDialog
@@ -216,7 +216,7 @@ export default function SettingsPage() {
             <PanelHeader title="Approved change windows" description="Used by rules to flag activity that matches planned maintenance" />
             <ul className="divide-y divide-border">
               {inv?.maintenance_windows.map((w) => (
-                <li key={w.id + w.start} className="px-4 py-2.5 text-[13px]">
+                <li key={w.id + w.start} className="px-4 py-2.5 text-sm">
                   <span className="mr-2 font-mono text-xs text-primary">{w.id}</span>
                   {w.description}
                   <div className="text-xs text-muted">

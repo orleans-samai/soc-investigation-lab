@@ -229,6 +229,7 @@ def system_status(lab: Lab):
         "counts": {
             "events": len(store.events),
             "alerts": len(store.alerts),
+            "open_alerts": sum(1 for a in store.alerts.all() if not a.status.is_closed),
             "incidents": len(store.incidents),
             "open_incidents": sum(1 for i in store.incidents.all() if i.status != IncidentStatus.closed),
             "rules": len(lab.engine.rules),

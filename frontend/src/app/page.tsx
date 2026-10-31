@@ -1,26 +1,121 @@
 "use client";
 
-import { ArrowRight, BellRing, FlaskConical, History } from "lucide-react";
+import { ArrowRight, BellRing, CircleCheck, FlaskConical, History } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import useSWR from "swr";
 
-import { SeverityBadge, StatusBadge, Tag } from "@/components/soc/badges";
-import { Legend, RankedBars, SERIES, SeverityBreakdown, TimeBars } from "@/components/soc/charts";
-import { EmptyState, ErrorState, PageHeader, Segmented, Stat, tableCls, Term } from "@/components/soc/common";
+import { SEVERITY_ORDER, SeverityBadge, StatusBadge } from "@/components/soc/badges";
+import { Legend, RankedBars, SERIES, TimeBars } from "@/components/soc/charts";
+import { EmptyState, ErrorState, PageHeader, Segmented, tableCls, Term } from "@/components/soc/common";
 import { EntityLink } from "@/components/soc/investigation-context";
+import { SignalChain, type ChainStage } from "@/components/soc/signal-chain";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/overlays";
 import { Panel, PanelHeader, Skeleton } from "@/components/ui/primitives";
 import { qs } from "@/lib/api";
-import type { Dashboard, EventFacets } from "@/lib/types";
-import { cn, formatShortDate, formatTs, relative } from "@/lib/utils";
 import { alertHref } from "@/lib/routes";
+import type { Alert, Dashboard, EventFacets, Metrics, Severity } from "@/lib/types";
+import { cn, formatShortDate, formatTs, nf, relative } from "@/lib/utils";
 
 type Range = "24h" | "7d" | "30d" | "all";
 
-export default function DashboardPage() {
+const RANGE_LABEL: Record<Range, string> = { "24h": "last 24 hours", "7d": "last 7 days", "30d": "last 30 days", all: "whole dataset" };
+const SEVERITY_RANK: Record<Severity, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+
+function perUnit(numerator: number, denominator: number, noun: string) {
+  if (!numerator || !denominator) return undefined;
+  return `1 per ${nf.format(Math.round(denominator / numerator))} ${noun}`;
+}
+
+function buildChain(d: Dashboard, m: Metrics | undefined): ChainStage[] {
+  const failures = d.timeline.reduce((sum, b) => sum + b.failures, 0);
+  const k = d.kpis;
+  const open = k.incidents_new + k.incidents_investigating;
+  const decided = m ? m.overall.true_positive + m.overall.benign + m.overall.false_positive : undefined;
+  return [
+    {
+      stage: 1,
+      name: "Telemetry",
+      value: k.events_in_range,
+      caption: "events",
+      detail: `${nf.format(k.events_last_24h)} in the last 24 h`,
+      href: "/events",
+      segments: [
+        { label: "Failed authentications", value: failures, color: SERIES.secondary },
+        { label: "Other", value: k.events_in_range - failures, color: SERIES.primary },
+      ],
+    },
+    {
+      stage: 2,
+      name: "Detections",
+      value: k.alerts_in_range,
+      caption: "alerts",
+      conversion: perUnit(k.alerts_in_range, k.events_in_range, "events"),
+      detail: `${nf.format(k.alerts_unassigned)} awaiting triage`,
+      href: "/alerts",
+      segments: SEVERITY_ORDER.map((sev) => ({ label: sev[0].toUpperCase() + sev.slice(1), value: d.severity.find((s) => s.severity === sev)?.count ?? 0, color: `var(--sev-${sev})` })),
+    },
+    {
+      stage: 3,
+      name: "Incidents",
+      value: open,
+      caption: "open",
+      conversion: k.alerts_in_range ? `${nf.format(open + k.incidents_closed)} from ${nf.format(k.alerts_in_range)} alerts` : undefined,
+      detail: `${nf.format(k.incidents_new)} not yet acknowledged`,
+      href: "/incidents",
+      segments: [
+        { label: "New", value: k.incidents_new, color: "var(--primary)" },
+        { label: "In progress", value: k.incidents_investigating, color: "var(--muted)" },
+        { label: "Closed", value: k.incidents_closed, color: "var(--border-strong)" },
+      ],
+    },
+    {
+      stage: 4,
+      name: "Decisions",
+      value: decided,
+      caption: "alerts closed with a verdict",
+      detail: m?.overall.precision !== null && m?.overall.precision !== undefined ? `Precision ${Math.round(m.overall.precision * 100)}%` : "No verdicts yet",
+      href: "/metrics",
+      segments: m
+        ? [
+            { label: "True positive", value: m.overall.true_positive, color: SERIES.secondary },
+            { label: "Benign", value: m.overall.benign, color: "var(--success)" },
+            { label: "False positive", value: m.overall.false_positive, color: "var(--subtle)" },
+          ]
+        : undefined,
+    },
+  ];
+}
+
+function AttentionList({ alerts, clock }: { alerts: Alert[]; clock: Date }) {
+  const open = alerts
+    .filter((a) => a.status === "new" || a.status === "investigating")
+    .sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity] || b.timestamp.localeCompare(a.timestamp))
+    .slice(0, 6);
+  if (!open.length) return <EmptyState icon={CircleCheck} title="Nothing waiting" description="Every alert in this window has a verdict." className="py-10" />;
+  return (
+    <ul className="divide-y divide-border">
+      {open.map((a) => (
+        <li key={a.id}>
+          <Link href={alertHref(a.id)} className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-surface-2">
+            <SeverityBadge severity={a.severity} className="mt-px w-[5.25rem]" />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-medium">{a.rule_name}</span>
+              <span className="block truncate text-xs text-subtle">
+                {[a.hostname, a.username ?? a.source_ip].filter(Boolean).join(" · ")}
+              </span>
+            </span>
+            <span className="shrink-0 font-mono text-2xs text-subtle">{relative(a.timestamp, clock)}</span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export default function OverviewPage() {
   const router = useRouter();
   const [range, setRange] = React.useState<Range>("7d");
   const [severity, setSeverity] = React.useState("all");
@@ -28,8 +123,10 @@ export default function DashboardPage() {
   const [status, setStatus] = React.useState("all");
   const params = qs({ range, severity: severity === "all" ? null : severity, host: host === "all" ? null : host, status: status === "all" ? null : status });
   const { data, error, mutate, isLoading } = useSWR<Dashboard>(`/dashboard${params}`, { refreshInterval: 20000, keepPreviousData: true });
+  const { data: metrics } = useSWR<Metrics>("/metrics", { refreshInterval: 30000 });
   const { data: facets } = useSWR<EventFacets>("/events/facets");
 
+  const clock = data ? new Date(data.clock) : new Date();
   const hourly = (data?.bucket_seconds ?? 3600) < 86400;
   const tick = (v: string) => {
     if (!hourly) return formatShortDate(v);
@@ -42,11 +139,10 @@ export default function DashboardPage() {
   return (
     <>
       <PageHeader
-        title="Security Overview"
+        title="Overview"
         description={
           <>
-            Live view of the lab environment. Every number below is computed by the backend from the loaded datasets - nothing is
-            randomly generated. Ranges are relative to the <Term name="Simulation clock">simulation clock</Term>.
+            {RANGE_LABEL[range][0].toUpperCase() + RANGE_LABEL[range].slice(1)} of lab telemetry, up to the <Term name="Simulation clock">simulation clock</Term>.
           </>
         }
         actions={
@@ -64,51 +160,12 @@ export default function DashboardPage() {
             />
             <Button asChild variant="primary">
               <Link href="/simulations">
-                <FlaskConical /> Run simulation
+                <FlaskConical /> Run a scenario
               </Link>
             </Button>
           </>
         }
       />
-
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        <Select
-          aria-label="Severity filter"
-          size="sm"
-          className="w-36"
-          value={severity}
-          onValueChange={setSeverity}
-          options={[{ value: "all", label: "All severities" }, ...["critical", "high", "medium", "low"].map((s) => ({ value: s, label: <span className="capitalize">{s}</span> }))]}
-        />
-        <Select
-          aria-label="Host filter"
-          size="sm"
-          className="w-40"
-          value={host}
-          onValueChange={setHost}
-          options={[{ value: "all", label: "All hosts" }, ...(facets?.hostnames ?? []).map((h) => ({ value: h, label: h }))]}
-        />
-        <Select
-          aria-label="Alert status filter"
-          size="sm"
-          className="w-40"
-          value={status}
-          onValueChange={setStatus}
-          options={[
-            { value: "all", label: "Any alert status" },
-            { value: "new", label: "New" },
-            { value: "investigating", label: "Investigating" },
-            { value: "resolved", label: "True positive" },
-            { value: "benign,false_positive", label: "Benign / false positive" },
-          ]}
-        />
-        {filtered && (
-          <Button size="sm" variant="ghost" onClick={() => (setSeverity("all"), setHost("all"), setStatus("all"))}>
-            Clear filters
-          </Button>
-        )}
-        {data && <span className="ml-auto text-xs text-subtle">Window: {formatTs(data.start, { seconds: false })} - {formatTs(data.end, { seconds: false })} UTC</span>}
-      </div>
 
       {error ? (
         <Panel>
@@ -116,34 +173,58 @@ export default function DashboardPage() {
         </Panel>
       ) : (
         <div className={cn("space-y-4 transition-opacity", isLoading && data && "opacity-60")}>
-          <Panel className="grid grid-cols-2 gap-px overflow-hidden bg-border sm:grid-cols-4 xl:grid-cols-8">
-            {data ? (
-              <>
-                <Stat label="Events processed" value={data.kpis.events_total} hint="All datasets" href="/events" />
-                <Stat label="Events, last 24h" value={data.kpis.events_last_24h} hint="Simulated time" />
-                <Stat label="Alerts in range" value={data.kpis.alerts_in_range} hint={`${range === "all" ? "All time" : `Last ${range}`}`} href="/alerts" />
-                <Stat label="Awaiting triage" value={data.kpis.alerts_unassigned} hint="Open, no incident" tone={data.kpis.alerts_unassigned ? "primary" : undefined} href="/alerts?incident=unassigned&status=new" />
-                <Stat label="Critical open" value={data.kpis.critical_open} hint="Alerts" tone={data.kpis.critical_open ? "critical" : undefined} href="/alerts?severity=critical&status=new,investigating" />
-                <Stat label="Incidents open" value={data.kpis.incidents_new} hint="Status new" tone={data.kpis.incidents_new ? "high" : undefined} href="/incidents?status=new" />
-                <Stat label="Investigating" value={data.kpis.incidents_investigating} hint="Incl. contained" href="/incidents?status=investigating,contained" />
-                <Stat label="Incidents closed" value={data.kpis.incidents_closed} hint="With documented decision" tone={data.kpis.incidents_closed ? "success" : undefined} href="/incidents?status=closed" />
-              </>
-            ) : (
-              Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="bg-surface px-4 py-3.5">
-                  <Skeleton className="h-3 w-20" />
-                  <Skeleton className="mt-2 h-6 w-14" />
-                </div>
-              ))
+          {data ? <SignalChain stages={buildChain(data, metrics)} /> : <Skeleton className="h-44 w-full" />}
+
+          <div className="flex flex-wrap items-center gap-2 pt-2">
+            <span className="eyebrow mr-1">Filter</span>
+            <Select
+              aria-label="Severity filter"
+              size="sm"
+              className="w-36"
+              value={severity}
+              onValueChange={setSeverity}
+              options={[{ value: "all", label: "All severities" }, ...["critical", "high", "medium", "low"].map((s) => ({ value: s, label: <span className="capitalize">{s}</span> }))]}
+            />
+            <Select
+              aria-label="Host filter"
+              size="sm"
+              className="w-40"
+              value={host}
+              onValueChange={setHost}
+              options={[{ value: "all", label: "All hosts" }, ...(facets?.hostnames ?? []).map((h) => ({ value: h, label: h }))]}
+            />
+            <Select
+              aria-label="Alert status filter"
+              size="sm"
+              className="w-44"
+              value={status}
+              onValueChange={setStatus}
+              options={[
+                { value: "all", label: "Any alert status" },
+                { value: "new", label: "New" },
+                { value: "investigating", label: "Investigating" },
+                { value: "resolved", label: "True positive" },
+                { value: "benign,false_positive", label: "Benign / false positive" },
+              ]}
+            />
+            {filtered && (
+              <Button size="sm" variant="ghost" onClick={() => (setSeverity("all"), setHost("all"), setStatus("all"))}>
+                Clear filters
+              </Button>
             )}
-          </Panel>
+            {data && (
+              <span className="ml-auto font-mono text-2xs text-subtle">
+                {formatTs(data.start, { seconds: false })} → {formatTs(data.end, { seconds: false })} UTC
+              </span>
+            )}
+          </div>
 
           <div className="grid gap-4 xl:grid-cols-3">
             <Panel className="xl:col-span-2">
               <PanelHeader
                 title="Event activity"
-                description="Events ingested per time bucket; failed authentications highlighted"
-                actions={<Legend items={[{ label: "Other events", color: SERIES.primary }, { label: "Failures", color: SERIES.secondary }]} />}
+                description="Events per time bucket"
+                actions={<Legend items={[{ label: "Other events", color: SERIES.primary }, { label: "Failed authentications", color: SERIES.secondary }]} />}
               />
               <div className="p-4">
                 {data ? (
@@ -155,7 +236,7 @@ export default function DashboardPage() {
                     labelFormatter={(v) => `${formatTs(v, { seconds: false })} UTC`}
                     keys={[
                       { key: "other", label: "Other events", color: SERIES.primary },
-                      { key: "failures", label: "Failures", color: SERIES.secondary },
+                      { key: "failures", label: "Failed authentications", color: SERIES.secondary },
                     ]}
                   />
                 ) : (
@@ -164,31 +245,26 @@ export default function DashboardPage() {
               </div>
             </Panel>
             <Panel>
-              <PanelHeader title="Alerts by severity" description="Click a severity to open the filtered queue" />
-              <div className="p-4">
-                {data ? (
-                  <SeverityBreakdown data={data.severity} onSelect={(s) => router.push(`/alerts?severity=${s}`)} />
-                ) : (
-                  <Skeleton className="h-40 w-full" />
-                )}
-              </div>
+              <PanelHeader
+                title="Needs attention"
+                description="Open alerts, most severe first"
+                actions={
+                  <Button asChild size="sm" variant="ghost">
+                    <Link href="/alerts">
+                      Queue <ArrowRight />
+                    </Link>
+                  </Button>
+                }
+              />
+              {data ? <AttentionList alerts={data.recent_alerts} clock={clock} /> : <Skeleton className="m-4 h-48" />}
             </Panel>
           </div>
 
           <div className="grid gap-4 xl:grid-cols-3">
             <Panel className="overflow-hidden xl:col-span-2">
-              <PanelHeader
-                title="Recent alerts"
-                actions={
-                  <Button asChild size="sm" variant="ghost">
-                    <Link href="/alerts">
-                      Alert queue <ArrowRight />
-                    </Link>
-                  </Button>
-                }
-              />
+              <PanelHeader title="Latest detections" />
               {data && data.recent_alerts.length === 0 ? (
-                <EmptyState icon={BellRing} title="No alerts in this window" description="Widen the time range or run a simulation to generate detections." />
+                <EmptyState icon={BellRing} title="No detections in this window" description="Widen the time range or run a scenario." />
               ) : (
                 <div className="overflow-x-auto">
                   <table className={tableCls.table}>
@@ -208,11 +284,11 @@ export default function DashboardPage() {
                           <td className={tableCls.td}>
                             <SeverityBadge severity={a.severity} />
                           </td>
-                          <td className={tableCls.td}>
+                          <td className={cn(tableCls.td, "min-w-48")}>
                             <Link href={alertHref(a.id)} className="font-medium hover:text-primary" onClick={(e) => e.stopPropagation()}>
                               {a.rule_name}
                             </Link>
-                            <div className="font-mono text-[11px] text-subtle">{a.rule_id}</div>
+                            <div className="font-mono text-2xs text-subtle">{a.rule_id}</div>
                           </td>
                           <td className={cn(tableCls.td, "hidden md:table-cell")}>
                             <EntityLink kind="host" value={a.hostname} />
@@ -240,15 +316,15 @@ export default function DashboardPage() {
               )}
             </Panel>
             <Panel>
-              <PanelHeader title="Top triggered rules" />
+              <PanelHeader title="Rules that fired" description="In this window" />
               <div className="p-4">
                 {data?.top_rules.length ? (
                   <RankedBars
                     rows={data.top_rules.map((r) => ({
                       key: r.rule_id,
                       label: (
-                        <Link href={`/alerts?rule_id=${r.rule_id}`} className="hover:text-primary">
-                          <span className="mr-1.5 font-mono text-[11px] text-subtle">{r.rule_id}</span>
+                        <Link href={`/alerts?rule_id=${r.rule_id}&status=`} className="hover:text-primary">
+                          <span className="mr-1.5 font-mono text-2xs text-subtle">{r.rule_id}</span>
                           {r.rule_name}
                         </Link>
                       ),
@@ -256,7 +332,7 @@ export default function DashboardPage() {
                     }))}
                   />
                 ) : data ? (
-                  <p className="text-xs text-muted">No rules triggered in this window.</p>
+                  <p className="text-xs text-muted">No rule fired in this window.</p>
                 ) : (
                   <Skeleton className="h-40 w-full" />
                 )}
@@ -266,7 +342,7 @@ export default function DashboardPage() {
 
           <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
             <Panel>
-              <PanelHeader title="Most active hosts" description="Ranked by alerts, then events" />
+              <PanelHeader title="Hosts" description="Most alerts, then most events" />
               <div className="p-4">
                 {data ? (
                   <RankedBars
@@ -275,11 +351,11 @@ export default function DashboardPage() {
                       label: (
                         <span className="flex items-center gap-2">
                           <EntityLink kind="host" value={h.hostname} />
-                          <span className="truncate text-[11px] text-subtle">{h.role}</span>
+                          <span className="truncate text-2xs text-subtle">{h.role}</span>
                         </span>
                       ),
                       value: h.events,
-                      meta: h.alerts ? <Tag className="text-high">{h.alerts} alerts</Tag> : null,
+                      meta: h.alerts ? <span className="font-mono text-2xs text-foreground">{h.alerts} alert{h.alerts === 1 ? "" : "s"}</span> : null,
                     }))}
                   />
                 ) : (
@@ -288,7 +364,7 @@ export default function DashboardPage() {
               </div>
             </Panel>
             <Panel>
-              <PanelHeader title="Top source IPs" description="Ranked by failed authentications" />
+              <PanelHeader title="Source addresses" description="Most failed authentications" />
               <div className="p-4">
                 {data ? (
                   <RankedBars
@@ -298,9 +374,9 @@ export default function DashboardPage() {
                       label: <EntityLink kind="ip" value={ip.ip} />,
                       value: ip.failures,
                       meta: (
-                        <Tag className={cn(ip.reputation === "malicious" && "text-critical", ip.reputation === "suspicious" && "text-high")}>
+                        <span className={cn("font-mono text-2xs", ip.reputation === "malicious" ? "text-critical" : "text-subtle")}>
                           {ip.internal ? "internal" : ip.reputation}
-                        </Tag>
+                        </span>
                       ),
                     }))}
                   />
@@ -311,7 +387,8 @@ export default function DashboardPage() {
             </Panel>
             <Panel className="lg:col-span-2 xl:col-span-1">
               <PanelHeader
-                title="Investigation activity"
+                title="Shift log"
+                description="What changed in the lab"
                 actions={
                   <Button asChild size="sm" variant="ghost">
                     <Link href="/activity">
@@ -321,15 +398,13 @@ export default function DashboardPage() {
                 }
               />
               <ol className="divide-y divide-border">
-                {(data?.recent_activity ?? []).slice(0, 8).map((a) => (
-                  <li key={a.id} className="flex gap-3 px-4 py-2.5">
-                    <span className={cn("mt-1.5 size-1.5 shrink-0 rounded-full", a.actor === "system" ? "bg-subtle" : "bg-primary")} aria-hidden />
-                    <div className="min-w-0">
-                      <p className="text-[13px] leading-snug text-foreground">{a.message}</p>
-                      <p className="mt-0.5 text-[11px] text-subtle">
-                        {a.actor} · {relative(a.timestamp)}
-                      </p>
-                    </div>
+                {(data?.recent_activity ?? []).slice(0, 7).map((a) => (
+                  <li key={a.id} className="grid grid-cols-[4.5rem_1fr] gap-3 px-4 py-2.5">
+                    <span className="pt-px font-mono text-2xs text-subtle">{relative(a.timestamp)}</span>
+                    <span className="min-w-0 text-sm leading-snug">
+                      {a.message}
+                      <span className="mt-0.5 block font-mono text-2xs text-subtle">{a.actor}</span>
+                    </span>
                   </li>
                 ))}
               </ol>

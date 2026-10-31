@@ -75,8 +75,8 @@ function AlertQueue() {
   return (
     <>
       <PageHeader
-        title="Alert Queue"
-        description="Detections produced by the rule engine. Triage each alert: escalate it to an incident, or close it as benign / false positive with a note."
+        title="Alert queue"
+        description="Escalate each alert to an incident, or close it with a verdict and a note."
       />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -136,7 +136,7 @@ function AlertQueue() {
       </div>
 
       {selected.size > 0 && (
-        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-primary/30 bg-primary/8 px-3 py-2 text-[13px]">
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-md border border-primary/30 bg-primary/8 px-3 py-2 text-sm">
           <span className="font-medium">{selected.size} selected</span>
           <Button size="sm" variant="primary" onClick={escalate}>
             <ShieldPlus /> Create incident
@@ -160,7 +160,7 @@ function AlertQueue() {
           <EmptyState
             icon={BellRing}
             title="No alerts match these filters"
-            description="Try 'Any status', or run a simulation to produce new detections."
+            description="Set status to Any status, or run a scenario to produce new detections."
             action={
               <Button asChild size="sm">
                 <Link href="/simulations">Open simulations</Link>
@@ -201,7 +201,7 @@ function AlertQueue() {
                       </tr>
                     ))}
                   {items.map((a) => (
-                    <tr key={a.id} className={cn(tableCls.row, "cursor-pointer", selected.has(a.id) && "bg-primary/5")} onClick={() => router.push(alertHref(a.id))}>
+                    <tr key={a.id} className={cn(tableCls.row, "cursor-pointer", selected.has(a.id) && "bg-primary/8")} onClick={() => router.push(alertHref(a.id))}>
                       <td className="pl-3" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
@@ -218,7 +218,7 @@ function AlertQueue() {
                         <Link href={alertHref(a.id)} onClick={(e) => e.stopPropagation()} className="font-medium hover:text-primary">
                           {a.rule_name}
                         </Link>
-                        <span className="ml-2 font-mono text-[11px] text-subtle">{a.rule_id}</span>
+                        <span className="ml-2 font-mono text-2xs text-subtle">{a.rule_id}</span>
                         <p className="truncate text-xs text-muted">{a.reason}</p>
                       </td>
                       <td className={cn(tableCls.td, "hidden lg:table-cell")}>

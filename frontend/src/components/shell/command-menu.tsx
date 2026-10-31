@@ -23,8 +23,8 @@ interface SearchResult {
 }
 
 const ENTITY_ICON = { user: User, host: Monitor, ip: Globe2 };
-const item = "flex h-8 cursor-pointer items-center gap-2.5 rounded px-2 text-[13px] data-[selected=true]:bg-surface-2 [&_svg]:size-3.5 [&_svg]:text-subtle";
-const heading = "[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:text-subtle";
+const item = "flex h-8 cursor-pointer items-center gap-2.5 rounded-sm px-2 text-sm data-[selected=true]:bg-surface-2 [&_svg]:size-3.5 [&_svg]:text-subtle";
+const heading = "[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-2xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wide [&_[cmdk-group-heading]]:text-subtle";
 
 export function CommandMenu() {
   const [open, setOpen] = React.useState(false);
@@ -63,7 +63,7 @@ export function CommandMenu() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex h-8 w-full max-w-sm items-center gap-2 rounded-md border border-border bg-surface px-2.5 text-[13px] text-subtle transition-colors hover:border-border-strong hover:text-muted"
+        className="flex h-8 w-full max-w-sm items-center gap-2 rounded-md border border-border bg-surface px-2.5 text-sm text-subtle transition-colors hover:border-border-strong hover:text-muted"
       >
         <Search className="size-3.5" />
         <span className="flex-1 truncate text-left">Search events, alerts, incidents, IPs...</span>
@@ -94,7 +94,7 @@ export function CommandMenu() {
                 </Command.Group>
               )}
               {debounced.length >= 2 && !isLoading && data && Object.values(data).every((v) => v.length === 0) && (
-                <Command.Empty className="px-3 py-8 text-center text-[13px] text-muted">No matches for &quot;{debounced}&quot;</Command.Empty>
+                <Command.Empty className="px-3 py-8 text-center text-sm text-muted">No matches for &quot;{debounced}&quot;</Command.Empty>
               )}
               {!!data?.entities.length && debounced.length >= 2 && (
                 <Command.Group heading="Entities">
@@ -103,8 +103,8 @@ export function CommandMenu() {
                     return (
                       <Command.Item key={`${e.kind}:${e.value}`} value={`${e.kind}:${e.value}`} onSelect={() => go(() => openEntity(e.kind, e.value))} className={item}>
                         <Icon />
-                        <span className={e.kind === "ip" ? "font-mono text-[12px]" : ""}>{e.value}</span>
-                        <span className="ml-auto text-[11px] text-subtle">{e.kind}</span>
+                        <span className={e.kind === "ip" ? "font-mono text-xs" : ""}>{e.value}</span>
+                        <span className="ml-auto text-2xs text-subtle">{e.kind}</span>
                       </Command.Item>
                     );
                   })}
@@ -115,7 +115,7 @@ export function CommandMenu() {
                   {data.incidents.map((i) => (
                     <Command.Item key={i.id} value={i.id} onSelect={() => go(() => router.push(incidentHref(i.id)))} className={item}>
                       <ShieldCheck />
-                      <span className="font-mono text-[12px] text-muted">{i.id}</span>
+                      <span className="font-mono text-xs text-muted">{i.id}</span>
                       <span className="truncate">{i.title}</span>
                     </Command.Item>
                   ))}
@@ -127,7 +127,7 @@ export function CommandMenu() {
                     <Command.Item key={a.id} value={a.id} onSelect={() => go(() => router.push(alertHref(a.id)))} className={item}>
                       <SeverityDot severity={a.severity} />
                       <span className="truncate">{a.rule_name}</span>
-                      <span className="ml-auto shrink-0 font-mono text-[11px] text-subtle">{formatTs(a.timestamp, { seconds: false })}</span>
+                      <span className="ml-auto shrink-0 font-mono text-2xs text-subtle">{formatTs(a.timestamp, { seconds: false })}</span>
                     </Command.Item>
                   ))}
                 </Command.Group>
@@ -138,7 +138,7 @@ export function CommandMenu() {
                     <Command.Item key={e.id} value={e.id} onSelect={() => go(() => openEvent(e.id))} className={item}>
                       <ScrollText />
                       <span className="truncate">{e.message || e.event_action}</span>
-                      <span className="ml-auto shrink-0 font-mono text-[11px] text-subtle">{formatTs(e.timestamp, { seconds: false })}</span>
+                      <span className="ml-auto shrink-0 font-mono text-2xs text-subtle">{formatTs(e.timestamp, { seconds: false })}</span>
                     </Command.Item>
                   ))}
                 </Command.Group>

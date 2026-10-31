@@ -71,7 +71,7 @@ export function ChallengePanel({ runId }: { runId: string }) {
       <form onSubmit={submit} className="divide-y divide-border">
         {data.questions.map((q, i) => (
           <fieldset key={q.id} className="space-y-2 px-4 py-3.5" disabled={data.submitted}>
-            <legend className="flex w-full items-start gap-2 text-[13px] font-medium">
+            <legend className="flex w-full items-start gap-2 text-sm font-medium">
               <span className="font-mono text-xs text-subtle">{i + 1}.</span>
               <span className="flex-1">{q.question}</span>
               {data.submitted ? (
@@ -85,12 +85,12 @@ export function ChallengePanel({ runId }: { runId: string }) {
                   </span>
                 )
               ) : (
-                <span className="shrink-0 text-[11px] font-normal text-subtle">{q.hint_used ? `${q.points / 2} pts (hint used)` : `${q.points} pts`}</span>
+                <span className="shrink-0 text-2xs font-normal text-subtle">{q.hint_used ? `${q.points / 2} pts (hint used)` : `${q.points} pts`}</span>
               )}
             </legend>
 
             {data.submitted ? (
-              <div className="space-y-1.5 pl-5 text-[13px]">
+              <div className="space-y-1.5 pl-5 text-sm">
                 <p className="text-muted">
                   Your answer: <span className={cn("font-medium", q.correct ? "text-success" : "text-critical")}>{q.answer || "(blank)"}</span>
                   {!q.correct && (
@@ -110,8 +110,8 @@ export function ChallengePanel({ runId }: { runId: string }) {
                       <label
                         key={opt}
                         className={cn(
-                          "flex cursor-pointer items-center gap-2 rounded-md border border-border px-2.5 py-1.5 text-[13px] hover:bg-surface-2",
-                          answers[q.id] === opt && "border-primary/60 bg-primary/8",
+                          "flex cursor-pointer items-center gap-2 rounded-md border border-border px-2.5 py-1.5 text-sm hover:bg-surface-2",
+                          answers[q.id] === opt && "border-primary/30 bg-primary/8",
                         )}
                       >
                         <input

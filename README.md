@@ -86,14 +86,14 @@ flowchart LR
     N & A & I --> API[FastAPI] --> UI[Next.js]
 ```
 
-Detalhes em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) e a documentação de cada regra em
+Detalhes em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), o sistema visual em [docs/DESIGN-SYSTEM.md](docs/DESIGN-SYSTEM.md) e a documentação de cada regra em
 [docs/DETECTION_RULES.md](docs/DETECTION_RULES.md).
 
 ## Stack
 
 * **Backend:** Python 3.12, FastAPI, Pydantic v2, SQLite, PyYAML (Sigma), Pytest, Ruff. API REST documentada em OpenAPI (`/docs`).
 * **Frontend:** Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4, componentes no estilo shadcn/ui sobre Radix,
-  Lucide, Recharts, Motion, SWR. Testes ponta a ponta com Playwright.
+  IBM Plex (Sans, Condensed, Mono), Lucide, Recharts, Motion, SWR. Testes ponta a ponta com Playwright.
 * **Persistência:** SQLite (padrão) com gravação incremental em transações e WAL, ou arquivos JSON com escrita atômica
   (`SOCLAB_STORAGE_BACKEND=json`). Estado em JSON de versões anteriores é migrado automaticamente; bancos corrompidos são
   colocados em quarentena.

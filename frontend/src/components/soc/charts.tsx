@@ -36,7 +36,7 @@ function TooltipCard({
 }: Partial<TooltipContentProps<number, string>> & { formatLabel?: (label: string) => string }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="min-w-36 rounded-md border border-border-strong bg-elevated px-3 py-2 text-xs shadow-xl shadow-black/30">
+    <div className="min-w-36 rounded-md border border-border-strong bg-elevated px-3 py-2 text-xs shadow-overlay">
       <div className="mb-1.5 font-medium text-foreground">{formatLabel ? formatLabel(String(label)) : label}</div>
       {payload.map((p) => (
         <div key={String(p.dataKey)} className="flex items-center gap-2 py-0.5 text-muted">
@@ -51,7 +51,7 @@ function TooltipCard({
 
 export function Legend({ items }: { items: { label: string; color: string }[] }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-2xs text-muted">
       {items.map((i) => (
         <span key={i.label} className="inline-flex items-center gap-1.5">
           <span className="size-2 rounded-sm" style={{ background: i.color }} aria-hidden />
@@ -130,12 +130,12 @@ export function SeverityBreakdown({ data, onSelect }: { data: { severity: Severi
               type="button"
               disabled={!onSelect}
               onClick={() => onSelect?.(d.severity)}
-              className="flex w-full items-center gap-2.5 py-2 text-left text-[13px] enabled:hover:text-foreground"
+              className="flex w-full items-center gap-2.5 py-2 text-left text-sm enabled:hover:text-foreground"
             >
               <span className="size-2 rounded-full" style={{ background: SEVERITY_COLOR[d.severity] }} aria-hidden />
               <span className="flex-1 capitalize text-muted">{d.severity}</span>
               <span className="font-mono tabular-nums text-foreground">{nf.format(d.count)}</span>
-              <span className="w-10 text-right font-mono text-[11px] tabular-nums text-subtle">{total ? Math.round((d.count / total) * 100) : 0}%</span>
+              <span className="w-10 text-right font-mono text-2xs tabular-nums text-subtle">{total ? Math.round((d.count / total) * 100) : 0}%</span>
             </button>
           </li>
         ))}
@@ -158,7 +158,7 @@ export function RankedBars({
   return (
     <ul className="space-y-2.5">
       {rows.map((r) => (
-        <li key={r.key} className="text-[13px]">
+        <li key={r.key} className="text-sm">
           <div className="flex items-center gap-2">
             <div className="min-w-0 flex-1 truncate">{r.label}</div>
             {r.meta}

@@ -15,7 +15,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <Toaster
           theme="system"
           position="bottom-right"
-          toastOptions={{ className: "!bg-elevated !border-border-strong !text-foreground !text-[13px]" }}
+          toastOptions={{ className: "!bg-elevated !border-border-strong !text-foreground !text-sm" }}
         />
       </TooltipProvider>
     </SWRConfig>

@@ -24,10 +24,10 @@ export function PageHeader({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-6 flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">{title}</h1>
-        {description && <p className="mt-1 max-w-3xl text-[13px] leading-relaxed text-muted">{description}</p>}
+        <h1 className="font-display text-xl font-semibold tracking-[-0.01em] text-foreground">{title}</h1>
+        {description && <p className="mt-1 max-w-2xl text-sm text-muted">{description}</p>}
         {children}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
@@ -64,10 +64,8 @@ export function EmptyState({
 }) {
   return (
     <div className={cn("flex flex-col items-center justify-center px-6 py-12 text-center", className)}>
-      <div className="mb-3 flex size-9 items-center justify-center rounded-lg border border-border bg-surface-2">
-        <Icon className="size-4 text-muted" />
-      </div>
-      <p className="text-[13px] font-medium text-foreground">{title}</p>
+      <Icon className="mb-3 size-5 text-subtle" strokeWidth={1.5} />
+      <p className="text-sm font-medium text-foreground">{title}</p>
       {description && <p className="mt-1 max-w-sm text-xs leading-relaxed text-muted">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
@@ -77,7 +75,7 @@ export function EmptyState({
 export function ErrorState({ error, retry }: { error: Error; retry?: () => void }) {
   return (
     <div role="alert" className="flex flex-col items-center gap-2 px-6 py-10 text-center">
-      <p className="text-[13px] font-medium text-critical">Could not load data</p>
+      <p className="text-sm font-medium text-critical">Could not load data</p>
       <p className="max-w-md text-xs text-muted">{error.message}</p>
       {retry && (
         <Button size="sm" variant="secondary" onClick={retry}>
@@ -104,10 +102,10 @@ export function Stat({
 }) {
   const body = (
     <>
-      <div className="text-xs text-muted">{label}</div>
+      <div className="eyebrow">{label}</div>
       <div
         className={cn(
-          "mt-1.5 font-mono text-[22px] font-medium leading-none tabular-nums tracking-tight",
+          "mt-2 font-display text-xl font-semibold leading-none tabular-nums",
           tone === "critical" && "text-critical",
           tone === "high" && "text-high",
           tone === "success" && "text-success",
@@ -116,7 +114,7 @@ export function Stat({
       >
         {value === null || value === undefined ? "-" : typeof value === "number" ? nf.format(value) : value}
       </div>
-      {hint && <div className="mt-1.5 truncate text-[11px] text-subtle">{hint}</div>}
+      {hint && <div className="mt-1.5 truncate text-2xs text-subtle">{hint}</div>}
     </>
   );
   const cls = "block min-w-0 bg-surface px-4 py-3.5";
@@ -132,7 +130,7 @@ export function Stat({
 /* ----------------------------------------------------------------- key / value list */
 export function KeyValue({ items, className }: { items: [React.ReactNode, React.ReactNode][]; className?: string }) {
   return (
-    <dl className={cn("grid grid-cols-[minmax(110px,max-content)_1fr] gap-x-4 gap-y-1.5 text-[13px]", className)}>
+    <dl className={cn("grid grid-cols-[minmax(110px,max-content)_1fr] gap-x-4 gap-y-1.5 text-sm", className)}>
       {items.map(([k, v], i) => (
         <React.Fragment key={i}>
           <dt className="text-muted">{k}</dt>
@@ -153,7 +151,7 @@ export function CodeBlock({ children, className, label }: { children: string; cl
   }
   return (
     <div className={cn("group relative rounded-md border border-border bg-background", className)}>
-      {label && <div className="border-b border-border px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide text-subtle">{label}</div>}
+      {label && <div className="border-b border-border px-3 py-1.5 eyebrow">{label}</div>}
       <Button
         variant="ghost"
         size="icon-sm"
@@ -163,7 +161,7 @@ export function CodeBlock({ children, className, label }: { children: string; cl
       >
         <Copy />
       </Button>
-      <pre className="max-h-96 overflow-auto whitespace-pre-wrap break-all p-3 font-mono text-[12px] leading-relaxed text-foreground/90">{text}</pre>
+      <pre className="max-h-96 overflow-auto whitespace-pre-wrap break-all p-3 font-mono text-xs leading-relaxed text-foreground/90">{text}</pre>
     </div>
   );
 }
@@ -176,7 +174,7 @@ export function MitreChip({ refItem, compact }: { refItem: MitreRef; compact?: b
         href={`https://attack.mitre.org/techniques/${refItem.technique_id.replace(".", "/")}/`}
         target="_blank"
         rel="noreferrer noopener"
-        className="inline-flex h-5 items-center gap-1 rounded border border-border bg-surface-2 px-1.5 font-mono text-[11px] text-muted transition-colors hover:border-primary/50 hover:text-foreground"
+        className="inline-flex h-5 items-center gap-1 rounded-sm border border-border bg-surface-2 px-1.5 font-mono text-2xs text-muted transition-colors hover:border-primary/30 hover:text-foreground"
       >
         {refItem.technique_id}
         {!compact && <span className="max-w-48 truncate font-sans">{refItem.technique.split(": ").pop()}</span>}
@@ -209,7 +207,7 @@ export function SortHeader({
       <button
         type="button"
         onClick={() => onSort(field)}
-        className={cn("inline-flex items-center gap-1 rounded hover:text-foreground", active && "text-foreground")}
+        className={cn("inline-flex items-center gap-1 rounded-sm uppercase tracking-[inherit] hover:text-foreground", active && "text-foreground")}
       >
         {label}
         <Icon className={cn("size-3", !active && "opacity-40")} />
@@ -219,10 +217,11 @@ export function SortHeader({
 }
 
 export const tableCls = {
-  table: "w-full border-collapse text-[13px]",
-  head: "sticky top-0 z-10 border-b border-border bg-surface text-xs text-muted",
+  table: "w-full border-collapse text-sm",
+  // Column heads use the eyebrow voice so they never compete with the data.
+  head: "sticky top-0 z-10 border-b border-border bg-surface font-mono text-2xs uppercase tracking-[0.06em] text-subtle",
   th: "h-8 px-3 text-left align-middle font-medium",
-  row: "border-b border-border/70 transition-colors last:border-0 hover:bg-surface-2/70",
+  row: "border-b border-border/70 transition-colors last:border-0 hover:bg-surface-2",
   td: "h-10 px-3 align-middle",
 };
 
@@ -282,8 +281,8 @@ export function Segmented<T extends string>({
           aria-checked={value === o.value}
           onClick={() => onChange(o.value)}
           className={cn(
-            "h-full rounded px-2.5 text-xs font-medium text-muted transition-colors hover:text-foreground",
-            value === o.value && "bg-surface-2 text-foreground shadow-sm",
+            "h-full rounded-sm px-2.5 text-xs font-medium text-muted transition-colors hover:text-foreground",
+            value === o.value && "bg-elevated text-foreground shadow-raised",
           )}
         >
           {o.label}

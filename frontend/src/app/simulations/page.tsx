@@ -1,7 +1,6 @@
 "use client";
 
-import { ArrowRight, BellRing, Check, CircleDashed, FileCode2, FlaskConical, Layers, Play, ShieldCheck, X } from "lucide-react";
-import { motion, useReducedMotion } from "motion/react";
+import { ArrowRight, Check, CircleDashed, FlaskConical, Play, X } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 import { toast } from "sonner";
@@ -10,6 +9,7 @@ import useSWR from "swr";
 import { SeverityBadge, StatusBadge, Tag } from "@/components/soc/badges";
 import { EmptyState, PageHeader, tableCls } from "@/components/soc/common";
 import { ChallengePanel } from "@/components/soc/challenge-panel";
+import { SignalChain, type ChainStage } from "@/components/soc/signal-chain";
 import { useInvestigation } from "@/components/soc/investigation-context";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Panel, PanelHeader, Skeleton } from "@/components/ui/primitives";
@@ -20,34 +20,20 @@ import { cn, formatTs, relative } from "@/lib/utils";
 import { alertHref, incidentHref } from "@/lib/routes";
 
 function Pipeline({ detail }: { detail: SimulationDetail }) {
-  const reduce = useReducedMotion();
   const { run, alerts, incidents } = detail;
-  const stages = [
-    { icon: FileCode2, label: "Raw logs generated", value: run.event_count, note: "Windows JSON / auth.log lines" },
-    { icon: Layers, label: "Normalized events", value: run.event_count, note: "Parsed by the import parsers" },
-    { icon: BellRing, label: "Alerts raised", value: alerts.length, note: `${run.triggered_rules.length} rule(s) fired` },
-    { icon: ShieldCheck, label: incidents.length ? "Incident" : "Incident", value: incidents.length, note: incidents.length ? incidents.map((i) => i.id).join(", ") : "Below auto-incident severity" },
+  const stages: ChainStage[] = [
+    { stage: 1, name: "Raw logs", value: run.event_count, caption: "lines", detail: "Windows JSON and auth.log" },
+    { stage: 2, name: "Normalized", value: run.event_count, caption: "events", detail: "Same parsers as file import" },
+    { stage: 3, name: "Alerts", value: alerts.length, caption: "raised", detail: `${run.triggered_rules.length} rule(s) fired` },
+    {
+      stage: 4,
+      name: "Incident",
+      value: incidents.length,
+      caption: incidents.length === 1 ? "opened" : "opened",
+      detail: incidents.length ? incidents.map((i) => i.id).join(", ") : "Below auto-incident severity",
+    },
   ];
-  return (
-    <ol className="grid gap-2 sm:grid-cols-4" aria-label="Detection pipeline">
-      {stages.map((s, i) => (
-        <motion.li
-          key={s.label}
-          initial={reduce ? false : { opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: reduce ? 0 : i * 0.08, duration: 0.18 }}
-          className="relative rounded-md border border-border bg-surface-2/60 px-3 py-2.5"
-        >
-          <div className="flex items-center gap-1.5 text-[11px] text-muted">
-            <s.icon className="size-3.5 text-primary" /> {s.label}
-          </div>
-          <div className="mt-1 font-mono text-xl tabular-nums">{s.value}</div>
-          <div className="truncate text-[11px] text-subtle">{s.note}</div>
-          {i < stages.length - 1 && <ArrowRight className="absolute -right-2.5 top-1/2 z-10 hidden size-3.5 -translate-y-1/2 text-subtle sm:block" aria-hidden />}
-        </motion.li>
-      ))}
-    </ol>
-  );
+  return <SignalChain stages={stages} compact />;
 }
 
 function RunResult({ runId }: { runId: string }) {
@@ -67,28 +53,28 @@ function RunResult({ runId }: { runId: string }) {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div>
-          <h4 className="mb-2 text-xs font-medium uppercase tracking-wide text-subtle">Detection validation</h4>
+          <h4 className="mb-2 eyebrow">Detection validation</h4>
           <ul className="divide-y divide-border rounded-md border border-border">
             {allRules.map((rid) => {
               const expected = run.expected_rules.includes(rid);
               const fired = run.triggered_rules.includes(rid);
               return (
-                <li key={rid} className="flex items-center gap-2 px-3 py-1.5 text-[13px]">
+                <li key={rid} className="flex items-center gap-2 px-3 py-1.5 text-sm">
                   {fired ? <Check className="size-3.5 text-success" /> : <X className="size-3.5 text-critical" />}
-                  <span className="font-mono text-xs">{rid}</span>
+                  <span className="whitespace-nowrap font-mono text-xs">{rid}</span>
                   <span className="truncate text-muted">{alerts.find((a) => a.rule_id === rid)?.rule_name ?? ""}</span>
-                  <span className="ml-auto text-[11px] text-subtle">{expected ? (fired ? "expected · fired" : "expected · MISSED") : "unexpected"}</span>
+                  <span className="ml-auto text-2xs text-subtle">{expected ? (fired ? "expected · fired" : "expected · MISSED") : "unexpected"}</span>
                 </li>
               );
             })}
           </ul>
         </div>
         <div>
-          <h4 className="mb-2 text-xs font-medium uppercase tracking-wide text-subtle">Alerts & incident</h4>
+          <h4 className="mb-2 eyebrow">Alerts & incident</h4>
           <ul className="divide-y divide-border rounded-md border border-border">
             {alerts.map((a) => (
               <li key={a.id}>
-                <Link href={alertHref(a.id)} className="flex items-center gap-2 px-3 py-1.5 text-[13px] hover:bg-surface-2">
+                <Link href={alertHref(a.id)} className="flex items-center gap-2 px-3 py-1.5 text-sm hover:bg-surface-2">
                   <SeverityBadge severity={a.severity} />
                   <span className="truncate">{a.rule_name}</span>
                   <StatusBadge status={a.status} className="ml-auto" />
@@ -112,11 +98,11 @@ function RunResult({ runId }: { runId: string }) {
       </div>
 
       <div>
-        <h4 className="mb-2 text-xs font-medium uppercase tracking-wide text-subtle">Generated raw logs (first 6)</h4>
+        <h4 className="mb-2 eyebrow">Generated raw logs (first 6)</h4>
         <div className="space-y-1">
           {events.slice(0, 6).map((e) => (
-            <button key={e.id} onClick={() => openEvent(e.id)} className="block w-full rounded border border-border bg-background px-2.5 py-1.5 text-left hover:border-primary/40">
-              <code className="block truncate font-mono text-[11px] text-foreground/85">{e.raw}</code>
+            <button key={e.id} onClick={() => openEvent(e.id)} className="block w-full rounded-sm border border-border bg-background px-2.5 py-1.5 text-left hover:border-primary/30">
+              <code className="block truncate font-mono text-2xs text-foreground/85">{e.raw}</code>
             </button>
           ))}
         </div>
@@ -158,12 +144,12 @@ function Simulations() {
   return (
     <>
       <PageHeader
-        title="Incident Simulations"
-        description="Controlled, synthetic attack scenarios. Each run renders raw Windows/Linux logs, pushes them through the real parsers and detection engine, and checks which rules fired against the ones the scenario is designed to trigger."
+        title="Simulations"
+        description="Inject a synthetic attack, then check which rules fired against the ones it was built to trigger."
       />
       <div className="grid gap-4 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <Panel className="h-fit overflow-hidden">
-          <PanelHeader title="Scenarios" description="Synthetic data only - no real systems are touched" />
+          <PanelHeader title="Scenarios" description="Synthetic logs only; nothing outside the lab is touched" />
           <ul className="divide-y divide-border">
             {!scenarios &&
               Array.from({ length: 6 }).map((_, i) => (
@@ -180,7 +166,7 @@ function Simulations() {
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="truncate text-[13px] font-medium">{s.name}</span>
+                      <span className="truncate text-sm font-medium">{s.name}</span>
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
                       <SeverityBadge severity={s.expected_severity} />
@@ -190,7 +176,7 @@ function Simulations() {
                       {s.challenge_points > 0 && <Tag>{s.challenge_points} pts</Tag>}
                     </div>
                   </div>
-                  <div className="shrink-0 text-right text-[11px] text-subtle">
+                  <div className="shrink-0 text-right text-2xs text-subtle">
                     {s.run_count ? `${s.run_count} run${s.run_count > 1 ? "s" : ""}` : "not run"}
                   </div>
                 </button>
@@ -221,7 +207,7 @@ function Simulations() {
               />
               <div className="grid gap-5 p-4 lg:grid-cols-2">
                 <div className="space-y-3">
-                  <p className="text-[13px] leading-relaxed">{selected.narrative}</p>
+                  <p className="text-sm leading-relaxed">{selected.narrative}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {selected.mitre.map((t) => (
                       <a key={t} href={`https://attack.mitre.org/techniques/${t.replace(".", "/")}/`} target="_blank" rel="noreferrer noopener">
@@ -234,7 +220,7 @@ function Simulations() {
                   <div className="text-xs text-muted">
                     Designed to trigger:{" "}
                     {selected.expected_rules.map((r) => (
-                      <Link key={r} href={`/rules?rule=${r}`} className="mr-1.5 font-mono text-primary hover:underline">
+                      <Link key={r} href={`/rules?rule=${r}`} className="mr-1.5 whitespace-nowrap font-mono text-primary hover:underline">
                         {r}
                       </Link>
                     ))}
@@ -242,16 +228,16 @@ function Simulations() {
                 </div>
                 <div className="space-y-3">
                   <div>
-                    <h4 className="mb-1 text-xs font-medium uppercase tracking-wide text-subtle">Learning objectives</h4>
-                    <ul className="list-disc space-y-0.5 pl-4 text-[13px] text-muted">
+                    <h4 className="mb-1 eyebrow">Learning objectives</h4>
+                    <ul className="list-disc space-y-0.5 pl-4 text-sm text-muted">
                       {selected.learning_objectives.map((o) => (
                         <li key={o}>{o}</li>
                       ))}
                     </ul>
                   </div>
                   <div>
-                    <h4 className="mb-1 text-xs font-medium uppercase tracking-wide text-subtle">Questions to answer in your investigation</h4>
-                    <ol className="list-decimal space-y-0.5 pl-4 text-[13px] text-muted">
+                    <h4 className="mb-1 eyebrow">Questions to answer in your investigation</h4>
+                    <ol className="list-decimal space-y-0.5 pl-4 text-sm text-muted">
                       {selected.investigation_questions.map((q) => (
                         <li key={q}>{q}</li>
                       ))}

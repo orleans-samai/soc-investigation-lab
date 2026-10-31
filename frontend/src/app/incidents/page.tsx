@@ -35,7 +35,7 @@ function IncidentList() {
     <>
       <PageHeader
         title="Incidents"
-        description="Alerts that share an account, source IP or host within a time window are correlated into one incident. High and critical alerts open incidents automatically; analysts can escalate others from the alert queue."
+        description="Alerts that share an account, source address or host are grouped here. High and critical alerts open one automatically."
       />
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Segmented

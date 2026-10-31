@@ -18,11 +18,10 @@ export default function MetricsPage() {
   return (
     <>
       <PageHeader
-        title="Detection Metrics"
+        title="Detection metrics"
         description={
           <>
-            How well detection and response are performing. <Term name="Precision">Precision</Term> and false-positive rate come from analyst decisions, so close
-            alerts and incidents to make them meaningful. Response times use wall-clock time; detection delay uses the simulated event timeline.
+            <Term name="Precision">Precision</Term> comes from analyst verdicts, so it fills in as alerts are closed. Response times are wall-clock.
           </>
         }
       />
@@ -32,10 +31,10 @@ export default function MetricsPage() {
         <div className="space-y-4">
           <Panel className="grid grid-cols-2 gap-px overflow-hidden bg-border sm:grid-cols-3 xl:grid-cols-6">
             <Stat label={<Term name="Precision">Precision</Term>} value={pct(m.overall.precision)} hint={`${m.overall.true_positive} TP / ${m.overall.false_positive} FP decided`} tone="primary" />
-            <Stat label="False-positive rate" value={pct(m.overall.false_positive_rate)} hint={`${m.overall.benign} benign, ${m.overall.open} still open`} />
-            <Stat label={<Term name="MTTD">Mean time to detect</Term>} value={formatDuration(m.overall.mean_time_to_detect_seconds)} hint="First event to alert" />
-            <Stat label={<Term name="MTTA">Mean time to acknowledge</Term>} value={formatDuration(m.overall.mean_time_to_acknowledge_seconds)} hint="Incident created to triage" />
-            <Stat label={<Term name="MTTR">Mean time to resolve</Term>} value={formatDuration(m.overall.mean_time_to_resolve_seconds)} hint={`${m.overall.incidents_closed}/${m.overall.incidents} incidents closed`} />
+            <Stat label="False positives" value={pct(m.overall.false_positive_rate)} hint={`${m.overall.benign} benign, ${m.overall.open} still open`} />
+            <Stat label={<Term name="MTTD">MTTD</Term>} value={formatDuration(m.overall.mean_time_to_detect_seconds)} hint="First event to alert" />
+            <Stat label={<Term name="MTTA">MTTA</Term>} value={formatDuration(m.overall.mean_time_to_acknowledge_seconds)} hint="Incident created to triage" />
+            <Stat label={<Term name="MTTR">MTTR</Term>} value={formatDuration(m.overall.mean_time_to_resolve_seconds)} hint={`${m.overall.incidents_closed}/${m.overall.incidents} incidents closed`} />
             <Stat label="Scenario coverage" value={`${m.simulation.scenarios_fully_detected}/${m.simulation.scenarios_executed || 0}`} hint={`${m.simulation.scenarios_total} scenarios available`} tone="success" />
           </Panel>
 
@@ -60,7 +59,7 @@ export default function MetricsPage() {
               <PanelHeader title="Incident outcomes" />
               <ul className="divide-y divide-border">
                 {m.classification.map((c) => (
-                  <li key={c.classification} className="flex items-center justify-between px-4 py-2.5 text-[13px]">
+                  <li key={c.classification} className="flex items-center justify-between px-4 py-2.5 text-sm">
                     <Term name={CLASSIFICATION_LABEL[c.classification].replace("Undetermined", "")}>{CLASSIFICATION_LABEL[c.classification]}</Term>
                     <span className="font-mono tabular-nums">{c.count}</span>
                   </li>
@@ -97,7 +96,7 @@ export default function MetricsPage() {
                     <tr key={r.rule_id} className={cn(tableCls.row, !r.enabled && "opacity-55")}>
                       <td className={tableCls.td}>
                         <Link href={`/rules?rule=${r.rule_id}`} className="hover:text-primary">
-                          <span className="mr-2 font-mono text-[11px] text-subtle">{r.rule_id}</span>
+                          <span className="mr-2 font-mono text-2xs text-subtle">{r.rule_id}</span>
                           {r.rule_name}
                         </Link>
                       </td>

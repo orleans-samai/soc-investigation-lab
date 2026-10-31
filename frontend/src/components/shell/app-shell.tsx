@@ -45,10 +45,10 @@ function Breadcrumbs() {
     crumbs.push({ href: `/${parts[0]}`, label: section?.label ?? parts[0] });
     if (parts[1]) crumbs.push({ href: pathname, label: parts[1] === "view" && recordId ? recordId : decodeURIComponent(parts[1]) });
   } else {
-    crumbs.push({ href: "/", label: "Dashboard" });
+    crumbs.push({ href: "/", label: "Overview" });
   }
   return (
-    <nav aria-label="Breadcrumb" className="hidden min-w-0 items-center gap-1 text-[13px] md:flex">
+    <nav aria-label="Breadcrumb" className="hidden min-w-0 items-center gap-1 text-sm md:flex">
       {crumbs.map((c, i) => {
         const last = i === crumbs.length - 1;
         return (
@@ -84,16 +84,12 @@ function SimulationBadge() {
       }
       side="bottom"
     >
-      <div
-        tabIndex={0}
-        className="flex h-7 items-center gap-2 rounded-md border border-medium/30 bg-medium/8 px-2 text-[11px] font-medium text-medium"
-      >
-        <span className="relative flex size-1.5">
-          <span className="absolute inline-flex size-full animate-ping rounded-full bg-medium opacity-60 motion-reduce:hidden" />
-          <span className="relative inline-flex size-1.5 rounded-full bg-medium" />
+      {/* Hatched tape = synthetic data. The clock is the lab's "now", not the wall clock. */}
+      <div tabIndex={0} role="status" className="flex h-7 items-stretch overflow-hidden rounded-md border border-medium/30 font-mono text-2xs" aria-label="Simulation mode, simulated clock">
+        <span className="hatch flex items-center px-2 font-medium uppercase tracking-[0.06em] text-medium">Simulation</span>
+        <span className="hidden items-center border-l border-medium/30 bg-surface px-2 tabular-nums text-muted xl:flex">
+          {data ? `${formatTs(data.clock, { seconds: false })} UTC` : ""}
         </span>
-        <span className="uppercase tracking-wide">Simulation Mode</span>
-        <span className="hidden font-mono font-normal text-muted xl:inline">{data ? formatTs(data.clock, { seconds: false }) : ""}</span>
       </div>
     </Tooltip>
   );
@@ -129,7 +125,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-dvh">
-      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded focus:bg-primary focus:px-3 focus:py-1.5 focus:text-white">
+      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-sm focus:bg-action focus:px-3 focus:py-1.5 focus:text-white">
         Skip to content
       </a>
       <Sidebar collapsed={collapsed} onToggle={toggle} />
@@ -146,7 +142,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </DialogPrimitive.Portal>
       </DialogPrimitive.Root>
 
-      <div className={cn("flex min-h-dvh flex-col transition-[padding] duration-150", collapsed ? "lg:pl-14" : "lg:pl-56")}>
+      <div className={cn("flex min-h-dvh flex-col transition-[padding] duration-150", collapsed ? "lg:pl-14" : "lg:pl-60")}>
         <header className="no-print sticky top-0 z-20 flex h-12 items-center gap-3 border-b border-border bg-background/85 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/70 lg:px-6">
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Open navigation">
             <Menu />

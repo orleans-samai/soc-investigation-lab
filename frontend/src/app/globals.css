@@ -2,57 +2,66 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ---------------------------------------------------------------------------
-   Design tokens. Dark is the primary theme; light mirrors the same roles.
-   Severity colours are reserved for severity - never used decoratively.
-   --------------------------------------------------------------------------- */
+/* ===========================================================================
+   SOC Investigation Lab - design tokens ("signal chain" direction)
+   See DESIGN-SYSTEM.md. Components consume the semantic names below, never hex.
+
+   Rules of use
+   - Severity colours mean severity only. Never decoration, never series 5.
+   - --primary is the text-safe blue (links, icons, focus); --action is the solid
+     blue behind white text (primary buttons).
+   - Tints: /8 wash, /14 fill, /30 outline. Nothing else.
+   =========================================================================== */
 :root {
-  --background: #f6f7f9;
+  --background: #f3f5f8;
   --surface: #ffffff;
-  --surface-2: #f1f3f6;
+  --surface-2: #eef1f5;
   --elevated: #ffffff;
-  --border: #e2e5eb;
-  --border-strong: #cdd2db;
-  --foreground: #10141b;
-  --muted: #586174;
-  --subtle: #8a92a2;
-  --primary: #2563eb;
-  --primary-hover: #1d4fd7;
+  --border: #dde2ea;
+  --border-strong: #c6cdd8;
+  --foreground: #12161d;
+  --muted: #535d6e;
+  --subtle: #66707f;
+  --primary: #2557c9;
+  --action: #2557c9;
+  --action-hover: #1e49ad;
   --primary-foreground: #ffffff;
-  --ring: #2563eb;
-  --sev-critical: #d92d2d;
-  --sev-high: #e2680f;
-  --sev-medium: #b88700;
-  --sev-low: #64748b;
-  --success: #138a4a;
+  --ring: #2557c9;
+  --sev-critical: #cc2f35;
+  --sev-high: #c25e10;
+  --sev-medium: #946c00;
+  --sev-low: #5f6b7f;
+  --success: #1e8150;
   --chart-1: #2a78d6;
   --chart-2: #e87ba4;
-  --chart-grid: #e8ebf0;
+  --chart-grid: #e6e9ef;
   color-scheme: light;
 }
 
 .dark {
-  --background: #090b0f;
-  --surface: #0e1117;
-  --surface-2: #131821;
-  --elevated: #171c26;
-  --border: #1f2531;
-  --border-strong: #2c3443;
-  --foreground: #e5e8ee;
-  --muted: #98a1b3;
-  --subtle: #677085;
-  --primary: #4d8dff;
-  --primary-hover: #6aa0ff;
+  /* Graphite with a blue cast, not void black: reads as an instrument panel. */
+  --background: #0f1216;
+  --surface: #151920;
+  --surface-2: #1b2029;
+  --elevated: #212733;
+  --border: #252b36;
+  --border-strong: #343c4a;
+  --foreground: #e4e8ee;
+  --muted: #9da6b5;
+  --subtle: #7b8596;
+  --primary: #7aa2ff;
+  --action: #3a6ce0;
+  --action-hover: #4a7bee;
   --primary-foreground: #ffffff;
-  --ring: #4d8dff;
-  --sev-critical: #f04a4a;
-  --sev-high: #f5893c;
-  --sev-medium: #e6bc34;
-  --sev-low: #8592ab;
-  --success: #3cc68a;
+  --ring: #7aa2ff;
+  --sev-critical: #f25a5e;
+  --sev-high: #f2913f;
+  --sev-medium: #e2b53e;
+  --sev-low: #8794aa;
+  --success: #46b985;
   --chart-1: #3987e5;
   --chart-2: #d55181;
-  --chart-grid: #1b212c;
+  --chart-grid: #1f252f;
   color-scheme: dark;
 }
 
@@ -67,7 +76,8 @@
   --color-muted: var(--muted);
   --color-subtle: var(--subtle);
   --color-primary: var(--primary);
-  --color-primary-hover: var(--primary-hover);
+  --color-action: var(--action);
+  --color-action-hover: var(--action-hover);
   --color-primary-foreground: var(--primary-foreground);
   --color-ring: var(--ring);
   --color-critical: var(--sev-critical);
@@ -75,9 +85,59 @@
   --color-medium: var(--sev-medium);
   --color-low: var(--sev-low);
   --color-success: var(--success);
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
   --animate-in: fade-in 140ms ease-out;
+}
+
+@theme {
+  /* Type: Plex Sans for the interface, Condensed for titles and figures, Mono for data and labels. */
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "IBM Plex Sans Condensed", "IBM Plex Sans", ui-sans-serif, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Seven sizes, no more. */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.05rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 0.875rem;
+  --text-base--line-height: 1.375rem;
+  --text-lg: 1rem;
+  --text-lg--line-height: 1.5rem;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 2rem;
+  --text-2xl--line-height: 2.25rem;
+
+  /* Radius: sm (chips), md (controls, panels), lg (dialogs), full (dots). */
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 7px;
+
+  /* Elevation: raised (selected segment) and overlay (menus, dialogs, sheets). */
+  --shadow-raised: 0 1px 2px rgb(0 0 0 / 0.22);
+  --shadow-overlay: 0 18px 44px -14px rgb(0 0 0 / 0.6), 0 0 0 1px var(--border-strong);
+}
+
+/* Section / column label: mono, uppercase, quiet. Used wherever a block needs a name. */
+@utility eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  line-height: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--subtle);
+}
+
+/* Diagonal tape marking synthetic data. Only for the Simulation Mode indicator. */
+@utility hatch {
+  background-image: repeating-linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--sev-medium) 22%, transparent) 0 5px,
+    transparent 5px 10px
+  );
 }
 
 @keyframes fade-in {
@@ -102,9 +162,15 @@
   }
   body {
     font-family: var(--font-sans);
-    font-feature-settings: "cv11", "ss01";
+    font-size: var(--text-sm);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+  }
+  .font-mono,
+  code,
+  kbd,
+  pre {
+    font-variant-numeric: tabular-nums slashed-zero;
   }
   ::selection {
     background: color-mix(in oklab, var(--primary) 35%, transparent);

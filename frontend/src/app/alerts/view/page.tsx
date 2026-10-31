@@ -83,8 +83,8 @@ function AlertDetailPage() {
             <StatusBadge status={alert.status} />
             <span className="font-mono text-xs text-subtle">{alert.id}</span>
           </div>
-          <h1 className="mt-2 text-xl font-semibold tracking-tight">{alert.rule_name}</h1>
-          <p className="mt-1 max-w-3xl text-[13px] text-muted">{alert.description}</p>
+          <h1 className="mt-2 font-display text-xl font-semibold tracking-[-0.01em]">{alert.rule_name}</h1>
+          <p className="mt-1 max-w-3xl text-sm text-muted">{alert.description}</p>
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
           {incident ? (
@@ -113,7 +113,7 @@ function AlertDetailPage() {
                     {alert.status === a.status ? <Check /> : <span className="size-3.5" />}
                     <span>
                       <span className="block">{a.label}</span>
-                      <span className="block text-[11px] text-subtle">{a.hint}</span>
+                      <span className="block text-2xs text-subtle">{a.hint}</span>
                     </span>
                   </DropdownMenuItem>
                 </React.Fragment>
@@ -128,17 +128,17 @@ function AlertDetailPage() {
           <Panel>
             <PanelHeader title="Why this alert fired" />
             <div className="space-y-4 p-4">
-              <p className="text-[13px] leading-relaxed">{alert.reason}</p>
-              <KeyValue items={alert.evidence.map((e) => [e.label, e.label.toLowerCase().includes("command") || e.label.startsWith("Decoded") ? <code className="break-all font-mono text-[12px]">{e.value}</code> : e.value])} />
+              <p className="text-sm leading-relaxed">{alert.reason}</p>
+              <KeyValue items={alert.evidence.map((e) => [e.label, e.label.toLowerCase().includes("command") || e.label.startsWith("Decoded") ? <code className="break-all font-mono text-xs">{e.value}</code> : e.value])} />
             </div>
           </Panel>
 
           {alert.fp_hints.length > 0 && (
-            <div className="flex gap-3 rounded-lg border border-medium/30 bg-medium/6 p-4">
+            <div className="flex gap-3 rounded-lg border border-medium/30 bg-medium/8 p-4">
               <Lightbulb className="mt-0.5 size-4 shrink-0 text-medium" />
               <div>
-                <h3 className="text-[13px] font-semibold">Possible <Term name="False positive">false-positive</Term> indicators</h3>
-                <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[13px] text-muted">
+                <h3 className="text-sm font-semibold">Possible <Term name="False positive">false-positive</Term> indicators</h3>
+                <ul className="mt-1 list-disc space-y-0.5 pl-4 text-sm text-muted">
                   {alert.fp_hints.map((h) => (
                     <li key={h}>{h}</li>
                   ))}
@@ -150,7 +150,7 @@ function AlertDetailPage() {
           <Panel className="overflow-hidden">
             <PanelHeader
               title={`Related events (${alert.event_count})`}
-              description="The exact records the rule evaluated. Click a row for raw log and normalized fields."
+              description="The records the rule evaluated. Open one for its raw log."
               actions={
                 <Button asChild size="sm" variant="ghost">
                   <Link href={`/events?ids=${alert.event_ids.join(",")}`}>Open in Log Explorer</Link>
@@ -235,14 +235,14 @@ function AlertDetailPage() {
           {rule && (
             <Panel>
               <PanelHeader title="Response playbook" />
-              <ol className="list-decimal space-y-1.5 p-4 pl-8 text-[13px] text-muted">
+              <ol className="list-decimal space-y-1.5 p-4 pl-8 text-sm text-muted">
                 {rule.response.map((s) => (
                   <li key={s}>{s}</li>
                 ))}
               </ol>
               <div className="border-t border-border p-4">
                 <h3 className="mb-1.5 text-xs font-medium text-subtle">Known benign causes</h3>
-                <ul className="list-disc space-y-1 pl-4 text-[13px] text-muted">
+                <ul className="list-disc space-y-1 pl-4 text-sm text-muted">
                   {rule.false_positives.map((s) => (
                     <li key={s}>{s}</li>
                   ))}

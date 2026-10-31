@@ -149,11 +149,10 @@ function Explorer() {
   return (
     <>
       <PageHeader
-        title="Log Explorer"
+        title="Log explorer"
         description={
           <>
-            Search every ingested record. Each row keeps its <Term name="Raw log">raw log</Term> and the <Term name="Normalized fields">normalized fields</Term> the
-            detection engine uses.
+            Every ingested record, with its <Term name="Raw log">raw log</Term> and the <Term name="Normalized fields">normalized fields</Term> rules read.
           </>
         }
         actions={
@@ -251,7 +250,7 @@ function Explorer() {
               To (UTC)
             </Label>
             <Input id="end" type="datetime-local" value={toInput(f.end)} onChange={(e) => set({ end: fromInput(e.target.value) })} className="h-7 w-44 text-xs" title="To (UTC)" />
-            <span className="text-[11px] text-subtle">UTC</span>
+            <span className="text-2xs text-subtle">UTC</span>
           </div>
           {active.length > 0 && (
             <Button size="sm" variant="ghost" onClick={() => (setSearch(""), reset())}>
@@ -265,7 +264,7 @@ function Explorer() {
       <Panel className="overflow-hidden">
         {error ? (
           queryMode ? (
-            <div role="alert" className="px-4 py-6 text-[13px]">
+            <div role="alert" className="px-4 py-6 text-sm">
               <span className="font-medium text-critical">Query error: </span>
               <span className="text-muted">{error.message}</span>
             </div>
@@ -327,7 +326,7 @@ function Explorer() {
                         <>
                           <td className="whitespace-nowrap px-3 text-xs text-muted">{e.event_source}</td>
                           <td className="max-w-0 px-3">
-                            <code className="block truncate font-mono text-[12px] text-foreground/85">{e.raw}</code>
+                            <code className="block truncate font-mono text-xs text-foreground/85">{e.raw}</code>
                           </td>
                         </>
                       ) : (

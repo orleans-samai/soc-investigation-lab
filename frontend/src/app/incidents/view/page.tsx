@@ -66,11 +66,11 @@ function Timeline({ alerts, events }: { alerts: Alert[]; events: NormalizedEvent
               <span className="z-10 mt-2.5 flex size-[22px] shrink-0 items-center justify-center rounded-full border border-border-strong bg-elevated">
                 <SeverityDot severity={entry.alert.severity} className="size-2.5" />
               </span>
-              <Link href={alertHref(entry.alert.id)} className="block min-w-0 flex-1 rounded-md border border-border-strong bg-surface-2 px-3 py-2 hover:border-primary/50">
+              <Link href={alertHref(entry.alert.id)} className="block min-w-0 flex-1 rounded-md border border-border-strong bg-surface-2 px-3 py-2 hover:border-primary/30">
                 <div className="flex flex-wrap items-center gap-2">
                   <SeverityBadge severity={entry.alert.severity} />
-                  <span className="text-[13px] font-semibold">{entry.alert.rule_name}</span>
-                  <span className="ml-auto font-mono text-[11px] text-subtle">{formatTs(entry.ts)}</span>
+                  <span className="text-sm font-semibold">{entry.alert.rule_name}</span>
+                  <span className="ml-auto font-mono text-2xs text-subtle">{formatTs(entry.ts)}</span>
                 </div>
                 <p className="mt-1 text-xs text-muted">{entry.alert.reason}</p>
               </Link>
@@ -80,12 +80,12 @@ function Timeline({ alerts, events }: { alerts: Alert[]; events: NormalizedEvent
               <span className="z-10 mt-[9px] flex w-[22px] shrink-0 justify-center">
                 <span className={cn("size-1.5 rounded-full", entry.event.outcome === "failure" ? "bg-high" : "bg-subtle")} />
               </span>
-              <button onClick={() => openEvent(entry.event.id)} className="flex min-w-0 flex-1 items-baseline gap-3 rounded px-1.5 py-1 text-left text-xs hover:bg-surface-2">
+              <button onClick={() => openEvent(entry.event.id)} className="flex min-w-0 flex-1 items-baseline gap-3 rounded-sm px-1.5 py-1 text-left text-xs hover:bg-surface-2">
                 <span className="shrink-0 font-mono text-subtle">{formatTs(entry.ts, { date: false })}</span>
-                <span className="shrink-0 font-mono text-[11px] text-muted">{entry.event.hostname}</span>
+                <span className="shrink-0 font-mono text-2xs text-muted">{entry.event.hostname}</span>
                 <span className={cn("truncate", entry.event.outcome === "failure" ? "text-high" : "text-foreground/90")}>{entry.event.message || entry.event.event_action}</span>
                 {hidden.get(entry.event.id) && (
-                  <span className="ml-auto shrink-0 rounded bg-surface-2 px-1.5 text-[11px] text-muted">+{hidden.get(entry.event.id)} similar</span>
+                  <span className="ml-auto shrink-0 rounded-sm bg-surface-2 px-1.5 text-2xs text-muted">+{hidden.get(entry.event.id)} similar</span>
                 )}
               </button>
             </li>
@@ -220,7 +220,7 @@ function IncidentPage() {
           </div>
           {titleDraft === null ? (
             <div className="group mt-2 flex items-start gap-1.5">
-              <h1 className="text-xl font-semibold tracking-tight">{incident.title}</h1>
+              <h1 className="font-display text-xl font-semibold tracking-[-0.01em]">{incident.title}</h1>
               <Button variant="ghost" size="icon-sm" className="opacity-60 group-hover:opacity-100" aria-label="Edit title" onClick={() => setTitleDraft(incident.title)}>
                 <Pencil />
               </Button>
@@ -243,7 +243,7 @@ function IncidentPage() {
               </Button>
             </form>
           )}
-          <p className="mt-1 max-w-4xl text-[13px] leading-relaxed text-muted">{incident.summary}</p>
+          <p className="mt-1 max-w-4xl text-sm leading-relaxed text-muted">{incident.summary}</p>
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
           {incident.status === "new" && (
@@ -291,12 +291,12 @@ function IncidentPage() {
                 <Link key={a.id} href={alertHref(a.id)} className="flex flex-col gap-1 px-4 py-3 hover:bg-surface-2 sm:flex-row sm:items-center sm:gap-3">
                   <SeverityBadge severity={a.severity} />
                   <div className="min-w-0 flex-1">
-                    <div className="text-[13px] font-medium">
-                      {a.rule_name} <span className="ml-1 font-mono text-[11px] text-subtle">{a.rule_id}</span>
+                    <div className="text-sm font-medium">
+                      {a.rule_name} <span className="ml-1 font-mono text-2xs text-subtle">{a.rule_id}</span>
                     </div>
                     <p className="truncate text-xs text-muted">{a.reason}</p>
                   </div>
-                  <span className="font-mono text-[11px] text-subtle">{formatTs(a.timestamp)}</span>
+                  <span className="font-mono text-2xs text-subtle">{formatTs(a.timestamp)}</span>
                   <StatusBadge status={a.status} />
                 </Link>
               ))}
@@ -322,25 +322,25 @@ function IncidentPage() {
                       <div className="mb-1 text-xs text-subtle">
                         <span className="font-medium text-muted">{n.author}</span> · {formatTs(n.created_at, { seconds: false })} UTC
                       </div>
-                      <p className="whitespace-pre-wrap text-[13px] leading-relaxed">{n.body}</p>
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed">{n.body}</p>
                     </li>
                   ))}
                 </ol>
               )}
               {incident.resolution && (
-                <div className="mt-4 rounded-md border border-success/30 bg-success/6 p-3">
+                <div className="mt-4 rounded-md border border-success/30 bg-success/8 p-3">
                   <div className="mb-1 text-xs font-medium text-success">Resolution</div>
-                  <p className="whitespace-pre-wrap text-[13px]">{incident.resolution}</p>
+                  <p className="whitespace-pre-wrap text-sm">{incident.resolution}</p>
                 </div>
               )}
             </TabsContent>
             <TabsContent value="playbook" className="divide-y divide-border">
               {playbook.map((p) => (
                 <div key={p.rule_id} className="p-4">
-                  <h3 className="text-[13px] font-semibold">
-                    {p.rule_name} <span className="font-mono text-[11px] font-normal text-subtle">{p.rule_id}</span>
+                  <h3 className="text-sm font-semibold">
+                    {p.rule_name} <span className="font-mono text-2xs font-normal text-subtle">{p.rule_id}</span>
                   </h3>
-                  <ol className="mt-2 list-decimal space-y-1 pl-5 text-[13px] text-muted">
+                  <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-muted">
                     {p.steps.map((s) => (
                       <li key={s}>{s}</li>
                     ))}
@@ -351,7 +351,7 @@ function IncidentPage() {
             </TabsContent>
             <TabsContent value="activity" className="divide-y divide-border">
               {activity.map((a) => (
-                <div key={a.id} className="flex gap-3 px-4 py-2.5 text-[13px]">
+                <div key={a.id} className="flex gap-3 px-4 py-2.5 text-sm">
                   <span className="w-28 shrink-0 text-xs text-subtle">{relative(a.timestamp)}</span>
                   <span className="text-muted">
                     <span className="text-foreground">{a.actor}</span> - {a.message}
@@ -414,7 +414,7 @@ function IncidentPage() {
                   {values.length ? (
                     <div className="flex flex-wrap gap-1.5">
                       {values.map((v) => (
-                        <span key={v} className="rounded border border-border bg-surface-2 px-2 py-0.5 text-xs">
+                        <span key={v} className="rounded-sm border border-border bg-surface-2 px-2 py-0.5 text-xs">
                           <EntityLink kind={kind} value={v} plain />
                         </span>
                       ))}

@@ -6,12 +6,12 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 export const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md text-[13px] font-medium transition-colors duration-100 disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&_svg]:size-3.5 [&_svg]:shrink-0",
+  "inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-md text-sm font-medium transition-colors duration-100 disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&_svg]:size-3.5 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        primary: "bg-primary text-primary-foreground hover:bg-primary-hover",
-        secondary: "border border-border-strong bg-surface-2 text-foreground hover:bg-elevated hover:border-subtle/50",
+        primary: "bg-action text-primary-foreground hover:bg-action-hover",
+        secondary: "border border-border-strong bg-surface text-foreground hover:bg-surface-2",
         ghost: "text-muted hover:bg-surface-2 hover:text-foreground",
         outline: "border border-border bg-transparent text-foreground hover:bg-surface-2",
         danger: "bg-critical text-white hover:bg-critical/90",

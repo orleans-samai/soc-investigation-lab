@@ -20,7 +20,7 @@ export default function ActivityPage() {
   const { data } = useSWR<Activity[]>("/activity?limit=300", { refreshInterval: 15000 });
   return (
     <>
-      <PageHeader title="Activity Log" description="Audit trail of everything that changed in the lab: detections, simulations, imports, triage decisions and incident updates." />
+      <PageHeader title="Activity log" description="Every change to the lab, newest first: detections, imports, simulations and analyst decisions." />
       <Panel className="overflow-hidden">
         {!data ? (
           <Skeleton className="h-96 w-full" />
@@ -34,8 +34,8 @@ export default function ActivityPage() {
                     {formatTs(a.timestamp)}
                   </span>
                   <span className={cn("w-20 shrink-0 text-xs", a.actor === "system" ? "text-subtle" : "text-primary")}>{a.actor}</span>
-                  <span className="w-36 shrink-0 font-mono text-[11px] text-muted">{a.action}</span>
-                  <span className="min-w-0 text-[13px]">
+                  <span className="w-36 shrink-0 font-mono text-2xs text-muted">{a.action}</span>
+                  <span className="min-w-0 text-sm">
                     {href ? (
                       <Link href={href} className="hover:text-primary">
                         {a.message}

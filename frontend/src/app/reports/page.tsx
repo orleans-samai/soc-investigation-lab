@@ -17,14 +17,14 @@ export default function ReportsPage() {
   return (
     <>
       <PageHeader
-        title="Investigation Reports"
-        description="Every incident produces a technical report: executive summary, scope, detections, ATT&CK mapping, timeline, IOCs, raw evidence, recommendations and analyst notes. Export as Markdown or print to PDF."
+        title="Reports"
+        description="One technical report per incident. Export as Markdown or JSON, or print to PDF."
       />
       <Panel className="overflow-hidden">
         {!data ? (
           <Skeleton className="h-64 w-full" />
         ) : data.total === 0 ? (
-          <EmptyState icon={FileText} title="No incidents to report on yet" description="Reports are generated from incidents. Run a simulation to create one." />
+          <EmptyState icon={FileText} title="No incidents to report on yet" description="Reports come from incidents. Run a scenario to create one." />
         ) : (
           <div className="overflow-x-auto">
             <table className={tableCls.table}>

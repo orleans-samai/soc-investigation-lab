@@ -33,7 +33,7 @@ export function DialogContent({
       <DialogPrimitive.Overlay className={overlay} />
       <DialogPrimitive.Content
         className={cn(
-          "fixed left-1/2 top-[12vh] z-50 w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 animate-in rounded-lg border border-border-strong bg-elevated shadow-2xl shadow-black/30",
+          "fixed left-1/2 top-[12vh] z-50 w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 animate-in rounded-lg border border-border-strong bg-elevated shadow-overlay",
           className,
         )}
       >
@@ -79,7 +79,7 @@ export function SheetContent({
       <DialogPrimitive.Overlay className={overlay} />
       <DialogPrimitive.Content
         className={cn(
-          "fixed inset-y-0 right-0 z-50 flex w-full max-w-2xl flex-col border-l border-border-strong bg-background shadow-2xl shadow-black/40",
+          "fixed inset-y-0 right-0 z-50 flex w-full max-w-2xl flex-col border-l border-border-strong bg-background shadow-overlay",
           "data-[state=open]:animate-[sheet-in_180ms_cubic-bezier(.2,.8,.2,1)]",
           className,
         )}
@@ -130,9 +130,9 @@ export function ConfirmDialog({
       <AlertDialogPrimitive.Trigger asChild>{trigger}</AlertDialogPrimitive.Trigger>
       <AlertDialogPrimitive.Portal>
         <AlertDialogPrimitive.Overlay className={overlay} />
-        <AlertDialogPrimitive.Content className="fixed left-1/2 top-[20vh] z-50 w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 animate-in rounded-lg border border-border-strong bg-elevated p-5 shadow-2xl">
+        <AlertDialogPrimitive.Content className="fixed left-1/2 top-[20vh] z-50 w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 animate-in rounded-lg border border-border-strong bg-elevated p-5 shadow-overlay">
           <AlertDialogPrimitive.Title className="text-sm font-semibold">{title}</AlertDialogPrimitive.Title>
-          <AlertDialogPrimitive.Description className="mt-2 text-[13px] leading-relaxed text-muted">{description}</AlertDialogPrimitive.Description>
+          <AlertDialogPrimitive.Description className="mt-2 text-sm leading-relaxed text-muted">{description}</AlertDialogPrimitive.Description>
           <div className="mt-5 flex justify-end gap-2">
             <AlertDialogPrimitive.Cancel asChild>
               <Button variant="ghost">Cancel</Button>
@@ -182,7 +182,7 @@ export function Select({
       <SelectPrimitive.Trigger
         aria-label={ariaLabel}
         className={cn(
-          "inline-flex items-center justify-between gap-2 rounded-md border border-border bg-surface px-2.5 text-[13px] text-foreground transition-colors hover:border-border-strong",
+          "inline-flex items-center justify-between gap-2 rounded-md border border-border bg-surface px-2.5 text-sm text-foreground transition-colors hover:border-border-strong",
           "focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 data-[placeholder]:text-subtle",
           size === "sm" ? "h-7" : "h-8",
           className,
@@ -197,14 +197,14 @@ export function Select({
         <SelectPrimitive.Content
           position="popper"
           sideOffset={4}
-          className="z-50 max-h-80 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-md border border-border-strong bg-elevated shadow-xl shadow-black/30"
+          className="z-50 max-h-80 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-md border border-border-strong bg-elevated shadow-overlay"
         >
           <SelectPrimitive.Viewport className="p-1">
             {options.map((o) => (
               <SelectPrimitive.Item
                 key={o.value}
                 value={o.value}
-                className="relative flex h-7 cursor-pointer select-none items-center rounded px-2 pr-7 text-[13px] outline-none data-[highlighted]:bg-surface-2"
+                className="relative flex h-7 cursor-pointer select-none items-center rounded-sm px-2 pr-7 text-sm outline-none data-[highlighted]:bg-surface-2"
               >
                 <SelectPrimitive.ItemText>{o.label}</SelectPrimitive.ItemText>
                 <SelectPrimitive.ItemIndicator className="absolute right-2">
@@ -228,7 +228,7 @@ export function DropdownMenuContent({ className, ...props }: React.ComponentProp
     <DropdownPrimitive.Portal>
       <DropdownPrimitive.Content
         sideOffset={4}
-        className={cn("z-50 min-w-44 rounded-md border border-border-strong bg-elevated p-1 shadow-xl shadow-black/30", className)}
+        className={cn("z-50 min-w-44 rounded-md border border-border-strong bg-elevated p-1 shadow-overlay", className)}
         {...props}
       />
     </DropdownPrimitive.Portal>
@@ -239,7 +239,7 @@ export function DropdownMenuItem({ className, ...props }: React.ComponentProps<t
   return (
     <DropdownPrimitive.Item
       className={cn(
-        "flex h-7 cursor-pointer select-none items-center gap-2 rounded px-2 text-[13px] outline-none data-[highlighted]:bg-surface-2 data-[disabled]:opacity-50 [&_svg]:size-3.5 [&_svg]:text-muted",
+        "flex h-7 cursor-pointer select-none items-center gap-2 rounded-sm px-2 text-sm outline-none data-[highlighted]:bg-surface-2 data-[disabled]:opacity-50 [&_svg]:size-3.5 [&_svg]:text-muted",
         className,
       )}
       {...props}
@@ -248,7 +248,7 @@ export function DropdownMenuItem({ className, ...props }: React.ComponentProps<t
 }
 
 export function DropdownMenuLabel({ className, ...props }: React.ComponentProps<typeof DropdownPrimitive.Label>) {
-  return <DropdownPrimitive.Label className={cn("px-2 py-1 text-[11px] font-medium uppercase tracking-wide text-subtle", className)} {...props} />;
+  return <DropdownPrimitive.Label className={cn("px-2 py-1 eyebrow", className)} {...props} />;
 }
 
 export const DropdownMenuSeparator = () => <DropdownPrimitive.Separator className="my-1 h-px bg-border" />;

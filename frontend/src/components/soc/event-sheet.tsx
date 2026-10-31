@@ -14,7 +14,7 @@ import { alertHref } from "@/lib/routes";
 
 export function EventFields({ event }: { event: NormalizedEvent }) {
   const items: [React.ReactNode, React.ReactNode][] = [
-    ["timestamp", <span key="t" className="font-mono text-[12px]">{formatTs(event.timestamp)} UTC</span>],
+    ["timestamp", <span key="t" className="font-mono text-xs">{formatTs(event.timestamp)} UTC</span>],
     [<Term key="e" name="Event ID">event_id</Term>, event.event_id],
     ["event_source", event.event_source],
     ["event_type", event.event_type],
@@ -31,7 +31,7 @@ export function EventFields({ event }: { event: NormalizedEvent }) {
     [<Term key="l" name="Logon type">logon_type</Term>, event.logon_type],
     ["process_name", event.process_name],
     ["parent_process", event.parent_process],
-    ["command_line", event.command_line && <code className="break-all font-mono text-[12px]">{event.command_line}</code>],
+    ["command_line", event.command_line && <code className="break-all font-mono text-xs">{event.command_line}</code>],
     ["target_username", event.target_username && <EntityLink kind="user" value={event.target_username} />],
     ["group_name", event.group_name],
     ["dataset", event.dataset],
@@ -85,15 +85,15 @@ export function EventSheet({ eventId, onOpenChange }: { eventId: string | null; 
             </TabsContent>
             <TabsContent value="context" className="space-y-5 p-5">
               <div>
-                <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-subtle">Alerts referencing this event</h3>
+                <h3 className="mb-2 eyebrow">Alerts referencing this event</h3>
                 {context?.alerts.length ? (
                   <ul className="space-y-1.5">
                     {context.alerts.map((a) => (
                       <li key={a.id}>
-                        <Link href={alertHref(a.id)} className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-[13px] hover:bg-surface-2">
+                        <Link href={alertHref(a.id)} className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm hover:bg-surface-2">
                           <SeverityBadge severity={a.severity} />
                           <span className="font-medium">{a.rule_name}</span>
-                          <span className="ml-auto font-mono text-[11px] text-subtle">{a.rule_id}</span>
+                          <span className="ml-auto font-mono text-2xs text-subtle">{a.rule_id}</span>
                         </Link>
                       </li>
                     ))}
@@ -103,7 +103,7 @@ export function EventSheet({ eventId, onOpenChange }: { eventId: string | null; 
                 )}
               </div>
               <div>
-                <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-subtle">Surrounding events on {event.hostname}</h3>
+                <h3 className="mb-2 eyebrow">Surrounding events on {event.hostname}</h3>
                 <ol className="divide-y divide-border rounded-md border border-border">
                   {context?.surrounding.map((e) => (
                     <li key={e.id}>

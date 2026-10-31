@@ -15,15 +15,15 @@ async function runScenario(page: Page, name: string) {
 
 test("dashboard shows live KPIs in simulation mode", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Security Overview" })).toBeVisible();
-  await expect(page.getByText("Simulation Mode", { exact: false }).first()).toBeVisible();
-  await expect(page.getByText("Events processed")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Overview" })).toBeVisible();
+  await expect(page.getByLabel("Simulation mode, simulated clock")).toBeVisible();
+  await expect(page.getByRole("list", { name: "Detection pipeline" })).toContainText("Telemetry");
   await expect(page.getByRole("link", { name: /SSH Brute Force/ }).first()).toBeVisible();
 });
 
 test("simulation -> incident -> documented closure -> report", async ({ page }) => {
   await runScenario(page, "Malicious macro");
-  await expect(page.getByText("Normalized events")).toBeVisible();
+  await expect(page.getByRole("list", { name: "Detection pipeline" })).toContainText("Normalized");
 
   await page.getByRole("link", { name: /Investigate INC-/ }).click();
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Suspicious PowerShell Execution");
@@ -42,7 +42,7 @@ test("simulation -> incident -> documented closure -> report", async ({ page }) 
   await expect(page.getByText("Closed", { exact: true }).or(page.getByText("closed", { exact: true })).first()).toBeVisible();
 
   await page.getByRole("link", { name: "Report", exact: true }).click();
-  await expect(page.getByRole("heading", { name: /Incident Report - INC-/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Incident report · INC-/ })).toBeVisible();
   await expect(page.getByText("203.0.113.80").first()).toBeVisible();
   await expect(page.getByText("True positive (malicious)").first()).toBeVisible();
 });

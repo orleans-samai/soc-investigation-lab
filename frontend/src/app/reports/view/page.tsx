@@ -26,8 +26,8 @@ function Section({ n, title, children }: { n: number; title: string; children: R
   );
 }
 
-const th = "border-b border-border px-2 py-1.5 text-left text-xs font-medium text-muted";
-const td = "border-b border-border/60 px-2 py-1.5 align-top text-[13px]";
+const th = "border-b border-border px-2 py-1.5 text-left font-mono text-2xs font-medium uppercase tracking-[0.06em] text-subtle";
+const td = "border-b border-border/60 px-2 py-1.5 align-top text-sm";
 
 function ReportPage() {
   const id = useSearchParams().get("id") ?? "";
@@ -60,9 +60,9 @@ function ReportPage() {
 
       <article className="print-surface mx-auto max-w-4xl rounded-lg border border-border bg-surface px-6 py-8 sm:px-10">
         <header className="mb-6">
-          <div className="text-[11px] font-medium uppercase tracking-wider text-medium">{r.environment}</div>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight">Incident Report - {inc.id}</h1>
-          <p className="mt-1 text-[15px] text-muted">{inc.title}</p>
+          <div className="eyebrow !text-medium">{r.environment}</div>
+          <h1 className="mt-2 font-display text-2xl font-semibold tracking-[-0.02em]">Incident report · {inc.id}</h1>
+          <p className="mt-1 text-base text-muted">{inc.title}</p>
           <div className="mt-4 grid gap-x-8 gap-y-1 sm:grid-cols-2">
             <KeyValue
               items={[
@@ -84,7 +84,7 @@ function ReportPage() {
         </header>
 
         <Section n={1} title="Executive summary">
-          <p className="text-[13px] leading-relaxed">{r.executive_summary}</p>
+          <p className="text-sm leading-relaxed">{r.executive_summary}</p>
           <p className="mt-2 text-xs text-muted">
             {r.metrics.event_count} events · {r.metrics.alert_count} alerts · acknowledged {r.metrics.time_to_acknowledge ?? "n/a"} · closed {r.metrics.time_to_close ?? "n/a"} after creation
           </p>
@@ -95,7 +95,7 @@ function ReportPage() {
             <div>
               <h3 className="mb-1 text-xs text-subtle">Hosts</h3>
               {r.scope.hosts.map((h) => (
-                <p key={h.hostname} className="text-[13px]">
+                <p key={h.hostname} className="text-sm">
                   <strong className="font-medium">{h.hostname}</strong> <span className="text-muted">{h.role ?? ""}{h.criticality ? ` · ${h.criticality}` : ""}</span>
                 </p>
               ))}
@@ -103,20 +103,20 @@ function ReportPage() {
             <div>
               <h3 className="mb-1 text-xs text-subtle">Accounts</h3>
               {r.scope.users.map((u) => (
-                <p key={u.username} className="text-[13px]">
+                <p key={u.username} className="text-sm">
                   <strong className="font-medium">{u.username}</strong> <span className="text-muted">{u.display_name}{u.privileged ? " · privileged" : ""}</span>
                 </p>
               ))}
-              {!r.scope.users.length && <p className="text-[13px] text-muted">None</p>}
+              {!r.scope.users.length && <p className="text-sm text-muted">None</p>}
             </div>
             <div>
               <h3 className="mb-1 text-xs text-subtle">Source addresses</h3>
               {r.scope.ips.map((i) => (
-                <p key={i.ip} className="text-[13px]">
-                  <strong className="font-mono text-[12px] font-medium">{i.ip}</strong> <span className="text-muted">{i.internal ? "internal" : `${i.reputation ?? "external"} · ${i.organization ?? ""}`}</span>
+                <p key={i.ip} className="text-sm">
+                  <strong className="font-mono text-xs font-medium">{i.ip}</strong> <span className="text-muted">{i.internal ? "internal" : `${i.reputation ?? "external"} · ${i.organization ?? ""}`}</span>
                 </p>
               ))}
-              {!r.scope.ips.length && <p className="text-[13px] text-muted">None</p>}
+              {!r.scope.ips.length && <p className="text-sm text-muted">None</p>}
             </div>
           </div>
         </Section>
@@ -147,7 +147,7 @@ function ReportPage() {
         </Section>
 
         <Section n={4} title="MITRE ATT&CK mapping">
-          <ul className="space-y-1 text-[13px]">
+          <ul className="space-y-1 text-sm">
             {inc.mitre.map((m) => (
               <li key={m.technique_id}>
                 <span className="font-mono text-xs">{m.technique_id}</span> {m.technique} <span className="text-muted">- {m.tactic}</span>
@@ -157,9 +157,9 @@ function ReportPage() {
         </Section>
 
         <Section n={5} title="Timeline">
-          <ol className="space-y-0.5 text-[12px]">
+          <ol className="space-y-0.5 text-xs">
             {r.timeline.slice(0, 150).map((t, i) => (
-              <li key={i} className={cn("flex flex-wrap gap-x-3 sm:flex-nowrap", t.kind === "alert" && "my-1 rounded bg-primary/8 px-1.5 py-1 font-medium")}>
+              <li key={i} className={cn("flex flex-wrap gap-x-3 sm:flex-nowrap", t.kind === "alert" && "my-1 rounded-sm bg-primary/8 px-1.5 py-1 font-medium")}>
                 <span className="w-36 shrink-0 font-mono text-muted">{formatTs(t.timestamp)}</span>
                 <span className="w-20 shrink-0 text-subtle">{t.kind === "alert" ? "ALERT" : t.event_id}</span>
                 <span className="min-w-0 [overflow-wrap:anywhere]">{t.title}</span>
@@ -190,25 +190,25 @@ function ReportPage() {
               </tbody>
             </table></div>
           ) : (
-            <p className="text-[13px] text-muted">No external indicators identified.</p>
+            <p className="text-sm text-muted">No external indicators identified.</p>
           )}
         </Section>
 
         <Section n={7} title="Evidence (raw logs)">
           <div className="space-y-1.5">
             {r.evidence.slice(0, 12).map((e) => (
-              <div key={e.event_ref} className="rounded border border-border bg-background px-2.5 py-1.5">
-                <div className="text-[11px] text-subtle">
+              <div key={e.event_ref} className="rounded-sm border border-border bg-background px-2.5 py-1.5">
+                <div className="text-2xs text-subtle">
                   {formatTs(e.timestamp)} · {e.source} · {e.event_id}
                 </div>
-                <code className="block whitespace-pre-wrap break-all font-mono text-[11px]">{e.raw.length > 600 ? `${e.raw.slice(0, 600)}…` : e.raw}</code>
+                <code className="block whitespace-pre-wrap break-all font-mono text-2xs">{e.raw.length > 600 ? `${e.raw.slice(0, 600)}…` : e.raw}</code>
               </div>
             ))}
           </div>
         </Section>
 
         <Section n={8} title="Recommendations">
-          <ol className="list-decimal space-y-1 pl-5 text-[13px]">
+          <ol className="list-decimal space-y-1 pl-5 text-sm">
             {r.recommendations.map((x) => (
               <li key={x}>{x}</li>
             ))}
@@ -217,7 +217,7 @@ function ReportPage() {
 
         <Section n={9} title="Analyst notes & resolution">
           {r.notes.length ? (
-            <ul className="space-y-2 text-[13px]">
+            <ul className="space-y-2 text-sm">
               {r.notes.map((n) => (
                 <li key={n.id}>
                   <span className="text-xs text-subtle">
@@ -228,10 +228,10 @@ function ReportPage() {
               ))}
             </ul>
           ) : (
-            <p className="text-[13px] text-muted">No notes recorded.</p>
+            <p className="text-sm text-muted">No notes recorded.</p>
           )}
           {inc.resolution && (
-            <div className="mt-3 rounded border border-success/30 bg-success/6 p-3 text-[13px]">
+            <div className="mt-3 rounded-sm border border-success/30 bg-success/8 p-3 text-sm">
               <strong className="text-success">Resolution: </strong>
               {inc.resolution}
             </div>

@@ -52,8 +52,8 @@ export function EntityLink({ kind, value, className, plain }: { kind: EntityKind
       }}
       title={`Investigate ${kind} ${value}`}
       className={cn(
-        "inline-flex max-w-full items-center gap-1 rounded text-left text-foreground underline-offset-2 hover:text-primary hover:underline",
-        kind === "ip" && "font-mono text-[12px]",
+        "inline-flex max-w-full items-center gap-1 rounded-sm text-left text-foreground underline-offset-2 hover:text-primary hover:underline",
+        kind === "ip" && "font-mono text-xs",
         className,
       )}
     >

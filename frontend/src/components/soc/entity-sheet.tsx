@@ -58,14 +58,14 @@ export function EntitySheet({ target, onOpenChange }: { target: Target; onOpenCh
                 ["Alerts", nf.format(data.alerts.length)],
               ].map(([label, value]) => (
                 <div key={label} className="bg-surface px-3 py-2.5">
-                  <div className="text-[11px] text-muted">{label}</div>
+                  <div className="text-2xs text-muted">{label}</div>
                   <div className={cn("mt-1 font-mono text-lg tabular-nums", label === "Auth failures" && Number(value) > 0 && "text-high")}>{value}</div>
                 </div>
               ))}
             </div>
 
             <section>
-              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-subtle">Context</h3>
+              <h3 className="mb-2 eyebrow">Context</h3>
               {data.kind === "user" && (
                 <KeyValue
                   items={[
@@ -101,7 +101,7 @@ export function EntitySheet({ target, onOpenChange }: { target: Target; onOpenCh
                       ["Location", data.network.geo ? `${data.network.geo.city}, ${data.network.geo.country}` : null],
                     ]}
                   />
-                  {!data.network.internal && <p className="mt-2 text-[11px] text-subtle">{data.network.note}</p>}
+                  {!data.network.internal && <p className="mt-2 text-2xs text-subtle">{data.network.note}</p>}
                 </>
               )}
               <KeyValue className="mt-1.5" items={[["First seen", formatTs(data.first_seen)], ["Last seen", formatTs(data.last_seen)]]} />
@@ -110,10 +110,10 @@ export function EntitySheet({ target, onOpenChange }: { target: Target; onOpenCh
             {Object.entries(data.related).map(([group, values]) =>
               values.length ? (
                 <section key={group}>
-                  <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-subtle">Related {group.replace("_", " ")}</h3>
+                  <h3 className="mb-2 eyebrow">Related {group.replace("_", " ")}</h3>
                   <div className="flex flex-wrap gap-1.5">
                     {values.map((v) => (
-                      <span key={v.value} className="inline-flex items-center gap-1.5 rounded border border-border bg-surface px-2 py-1 text-xs">
+                      <span key={v.value} className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-surface px-2 py-1 text-xs">
                         <EntityLink kind={group === "users" ? "user" : group === "hosts" ? "host" : "ip"} value={v.value} plain />
                         <span className="tabular-nums text-subtle">{v.count}</span>
                       </span>
@@ -124,17 +124,17 @@ export function EntitySheet({ target, onOpenChange }: { target: Target; onOpenCh
             )}
 
             <section>
-              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-subtle">Alerts</h3>
+              <h3 className="mb-2 eyebrow">Alerts</h3>
               {data.alerts.length === 0 ? (
                 <p className="text-xs text-muted">No alerts involve this entity.</p>
               ) : (
                 <ul className="divide-y divide-border rounded-md border border-border">
                   {data.alerts.slice(0, 10).map((a) => (
                     <li key={a.id}>
-                      <Link href={alertHref(a.id)} onClick={() => onOpenChange(false)} className="flex items-center gap-2 px-3 py-2 text-[13px] hover:bg-surface-2">
+                      <Link href={alertHref(a.id)} onClick={() => onOpenChange(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-surface-2">
                         <SeverityBadge severity={a.severity} />
                         <span className="truncate">{a.rule_name}</span>
-                        <span className="ml-auto shrink-0 font-mono text-[11px] text-subtle">{formatTs(a.timestamp, { seconds: false })}</span>
+                        <span className="ml-auto shrink-0 font-mono text-2xs text-subtle">{formatTs(a.timestamp, { seconds: false })}</span>
                         <StatusBadge status={a.status} />
                       </Link>
                     </li>
@@ -144,7 +144,7 @@ export function EntitySheet({ target, onOpenChange }: { target: Target; onOpenCh
             </section>
 
             <section>
-              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-subtle">Recent events</h3>
+              <h3 className="mb-2 eyebrow">Recent events</h3>
               <ol className="divide-y divide-border rounded-md border border-border">
                 {data.recent_events.map((e) => (
                   <li key={e.id}>

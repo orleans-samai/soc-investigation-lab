@@ -84,11 +84,10 @@ export default function ImportPage() {
   return (
     <>
       <PageHeader
-        title="Data Import"
+        title="Data import"
         description={
           <>
-            Upload Windows or Linux logs. Files are validated first: nothing is stored until you confirm, duplicates are detected by content hash, and
-            invalid lines are reported individually. Content is only ever parsed as text - <Term name="Fail-safe import">never executed</Term>.
+            Nothing is stored until you confirm the validation report. Files are parsed as text and <Term name="Fail-safe import">never executed</Term>.
           </>
         }
       />
@@ -111,19 +110,19 @@ export default function ImportPage() {
                   choose(e.dataTransfer.files[0]);
                 }}
                 className={cn(
-                  "flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-border-strong px-6 py-10 text-center transition-colors hover:border-primary/60 hover:bg-primary/4",
+                  "flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-border-strong px-6 py-10 text-center transition-colors hover:border-primary/30 hover:bg-primary/8",
                   dragging && "border-primary bg-primary/8",
                 )}
               >
                 <FileUp className="mb-2 size-6 text-subtle" />
                 {file ? (
                   <>
-                    <p className="text-[13px] font-medium">{file.name}</p>
+                    <p className="text-sm font-medium">{file.name}</p>
                     <p className="text-xs text-muted">{formatBytes(file.size)} · click to choose another file</p>
                   </>
                 ) : (
                   <>
-                    <p className="text-[13px] font-medium">Drop a log file here, or click to browse</p>
+                    <p className="text-sm font-medium">Drop a log file here, or click to browse</p>
                     <p className="text-xs text-muted">Try one of the sample files on the right</p>
                   </>
                 )}
@@ -194,7 +193,7 @@ export default function ImportPage() {
               </div>
               <div className="space-y-4 p-4">
                 {committed ? (
-                  <div className="flex items-start gap-3 rounded-md border border-success/30 bg-success/6 p-3 text-[13px]">
+                  <div className="flex items-start gap-3 rounded-md border border-success/30 bg-success/8 p-3 text-sm">
                     <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
                     <div>
                       {nf.format(report.added)} events stored and the detection engine re-ran: <strong>{report.alerts_created}</strong> new alert(s).
@@ -220,7 +219,7 @@ export default function ImportPage() {
                     </div>
                   </div>
                 ) : report.added === 0 ? (
-                  <div className="flex items-start gap-3 rounded-md border border-medium/30 bg-medium/6 p-3 text-[13px]">
+                  <div className="flex items-start gap-3 rounded-md border border-medium/30 bg-medium/8 p-3 text-sm">
                     <AlertTriangle className="mt-0.5 size-4 shrink-0 text-medium" />
                     Nothing new to import{report.duplicates ? " - every valid record is already in the lab" : ""}.
                   </div>
@@ -236,7 +235,7 @@ export default function ImportPage() {
 
                 {report.errors.length > 0 && (
                   <div>
-                    <h3 className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-subtle">
+                    <h3 className="mb-2 flex items-center gap-1.5 eyebrow">
                       <FileWarning className="size-3.5" /> Parsing errors
                       {report.error_count > report.errors.length && ` (first ${report.errors.length} of ${report.error_count})`}
                     </h3>
@@ -255,7 +254,7 @@ export default function ImportPage() {
                               <td className="px-3 py-1.5 font-mono text-xs text-muted">{err.line ?? "-"}</td>
                               <td className="px-3 py-1.5 text-xs text-critical">{err.message}</td>
                               <td className="max-w-0 px-3 py-1.5">
-                                <code className="block truncate font-mono text-[11px] text-muted">{err.excerpt}</code>
+                                <code className="block truncate font-mono text-2xs text-muted">{err.excerpt}</code>
                               </td>
                             </tr>
                           ))}
@@ -267,7 +266,7 @@ export default function ImportPage() {
 
                 {report.preview.length > 0 && !committed && (
                   <div>
-                    <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-subtle">Preview (first {report.preview.length} normalized events)</h3>
+                    <h3 className="mb-2 eyebrow">Preview (first {report.preview.length} normalized events)</h3>
                     <div className="max-h-72 overflow-auto rounded-md border border-border">
                       <table className={tableCls.table}>
                         <thead className={tableCls.head}>
@@ -306,7 +305,7 @@ export default function ImportPage() {
               {SAMPLES.map((s) => (
                 <li key={s.file} className="flex items-center gap-3 px-4 py-2.5">
                   <div className="min-w-0 flex-1">
-                    <div className="text-[13px]">{s.label}</div>
+                    <div className="text-sm">{s.label}</div>
                     <div className="truncate text-xs text-subtle">{s.note}</div>
                   </div>
                   <Button asChild size="sm" variant="ghost">
@@ -342,7 +341,7 @@ export default function ImportPage() {
                 {history.slice(0, 8).map((h) => (
                   <li key={h.id} className="px-4 py-2.5 text-xs">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-[13px]">{h.filename}</span>
+                      <span className="truncate text-sm">{h.filename}</span>
                       <span className="shrink-0 text-subtle">{relative(h.created_at)}</span>
                     </div>
                     <div className="mt-0.5 text-muted">

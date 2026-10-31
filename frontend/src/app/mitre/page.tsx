@@ -18,11 +18,10 @@ export default function MitrePage() {
   return (
     <>
       <PageHeader
-        title="MITRE ATT&CK Coverage"
+        title="ATT&CK coverage"
         description={
           <>
-            Which <Term name="MITRE ATT&CK">ATT&CK</Term> techniques the lab&apos;s rules can detect, and which ones have produced alerts. Uncovered techniques are
-            visible on purpose: they are the detection backlog.
+            Which <Term name="MITRE ATT&CK">ATT&CK</Term> techniques a rule covers, and which have fired. Dashed cells are the detection backlog.
           </>
         }
         actions={
@@ -39,7 +38,7 @@ export default function MitrePage() {
         }
       />
       {data && (
-        <div className="mb-4 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-4">
+        <div className="mb-4 grid grid-cols-2 gap-px overflow-hidden rounded-md border border-border bg-border sm:grid-cols-4">
           {[
             ["Techniques in view", data.summary.techniques],
             ["Covered by a rule", data.summary.covered],
@@ -47,15 +46,15 @@ export default function MitrePage() {
             ["With alerts", data.summary.detected],
           ].map(([label, value]) => (
             <div key={label} className="bg-surface px-4 py-3">
-              <div className="text-xs text-muted">{label}</div>
-              <div className="mt-1 font-mono text-xl tabular-nums">{value}</div>
+              <div className="eyebrow">{label}</div>
+              <div className="mt-2 font-display text-xl font-semibold tabular-nums">{value}</div>
             </div>
           ))}
         </div>
       )}
-      <div className="mb-3 flex flex-wrap items-center gap-4 text-[11px] text-muted">
+      <div className="mb-3 flex flex-wrap items-center gap-4 text-2xs text-muted">
         <span className="inline-flex items-center gap-1.5">
-          <span className="size-3 rounded-sm border border-primary/50 bg-primary/25" /> Alerts observed
+          <span className="size-3 rounded-sm border border-primary/30 bg-primary/30" /> Alerts observed
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="size-3 rounded-sm border border-border-strong bg-surface-2" /> Covered by a rule, no alerts
@@ -77,7 +76,7 @@ export default function MitrePage() {
                     <div className="truncate text-xs font-semibold" title={tactic.name}>
                       {tactic.name}
                     </div>
-                    <div className="font-mono text-[10px] text-subtle">
+                    <div className="font-mono text-2xs text-subtle">
                       {tactic.id} · {tactic.techniques.filter((t) => t.rules.length).length}/{tactic.techniques.length}
                     </div>
                   </div>
@@ -106,17 +105,17 @@ export default function MitrePage() {
                               target={t.alerts ? undefined : "_blank"}
                               rel="noreferrer noopener"
                               className={cn(
-                                "block rounded-md border px-2 py-1.5 text-[11px] leading-snug transition-colors",
+                                "block rounded-md border px-2 py-1.5 text-2xs leading-snug transition-colors",
                                 t.alerts > 0
-                                  ? "border-primary/50 bg-primary/15 text-foreground hover:bg-primary/25"
+                                  ? "border-primary/30 bg-primary/14 text-foreground hover:bg-primary/30"
                                   : covered
                                     ? "border-border-strong bg-surface-2 text-foreground/90 hover:border-subtle"
                                     : "border-dashed border-border-strong text-subtle hover:text-muted",
                               )}
                             >
-                              <div className="font-mono text-[10px] text-muted">{t.id}</div>
+                              <div className="font-mono text-2xs text-muted">{t.id}</div>
                               <div className="line-clamp-2">{t.name.split(": ").pop()}</div>
-                              {t.alerts > 0 && <div className="mt-0.5 font-mono text-[10px] text-primary">{t.alerts} alerts</div>}
+                              {t.alerts > 0 && <div className="mt-0.5 font-mono text-2xs text-primary">{t.alerts} alerts</div>}
                             </a>
                           </Tooltip>
                         </li>

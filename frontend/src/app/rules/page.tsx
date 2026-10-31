@@ -73,7 +73,7 @@ function RuleDetail({ rule, onChanged }: { rule: RuleInfo; onChanged: () => void
             <MitreChip key={m.technique_id} refItem={m} />
           ))}
         </div>
-        <p className="text-[13px] leading-relaxed text-muted">{rule.description}</p>
+        <p className="text-sm leading-relaxed text-muted">{rule.description}</p>
 
         <section>
           <Tabs defaultValue="logic">
@@ -91,7 +91,7 @@ function RuleDetail({ rule, onChanged }: { rule: RuleInfo; onChanged: () => void
             </TabsContent>
             <TabsContent value="sigma">
               {sigma ? <CodeBlock>{sigma}</CodeBlock> : <Skeleton className="h-40 w-full" />}
-              <p className="mt-1.5 text-[11px] text-subtle">
+              <p className="mt-1.5 text-2xs text-subtle">
                 Portable Sigma YAML with the current parameters. Thresholds are exported as Sigma v2 correlation rules; convert with pySigma / sigma-cli to
                 Splunk, Elastic, Sentinel and other SIEMs.
               </p>
@@ -101,7 +101,7 @@ function RuleDetail({ rule, onChanged }: { rule: RuleInfo; onChanged: () => void
 
         {rule.params.length > 0 && (
           <section>
-            <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-subtle">
+            <h3 className="mb-1 eyebrow">
               Tuning - <Term name="Threshold">thresholds</Term> & windows
             </h3>
             <p className="mb-3 text-xs text-muted">
@@ -123,7 +123,7 @@ function RuleDetail({ rule, onChanged }: { rule: RuleInfo; onChanged: () => void
                     className="font-mono"
                     aria-describedby={`${p.name}-range`}
                   />
-                  <p id={`${p.name}-range`} className="text-[11px] text-subtle">
+                  <p id={`${p.name}-range`} className="text-2xs text-subtle">
                     Allowed {p.min}-{p.max}
                   </p>
                 </div>
@@ -154,7 +154,7 @@ function RuleDetail({ rule, onChanged }: { rule: RuleInfo; onChanged: () => void
               </Button>
             </div>
             {backtest && (
-              <div className="mt-3 rounded-md border border-border bg-surface-2/60 p-3 text-[13px]">
+              <div className="mt-3 rounded-md border border-border bg-surface-2/60 p-3 text-sm">
                 <p>
                   With these values the rule would produce <strong className="font-mono">{backtest.alert_count}</strong> alert(s) on the current dataset (currently{" "}
                   <span className="font-mono">{backtest.current_alert_count}</span>).
@@ -178,16 +178,16 @@ function RuleDetail({ rule, onChanged }: { rule: RuleInfo; onChanged: () => void
 
         <section className="grid gap-4 sm:grid-cols-2">
           <div>
-            <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wide text-subtle">Known false positives</h3>
-            <ul className="list-disc space-y-1 pl-4 text-[13px] text-muted">
+            <h3 className="mb-1.5 eyebrow">Known false positives</h3>
+            <ul className="list-disc space-y-1 pl-4 text-sm text-muted">
               {rule.false_positives.map((s) => (
                 <li key={s}>{s}</li>
               ))}
             </ul>
           </div>
           <div>
-            <h3 className="mb-1.5 text-xs font-medium uppercase tracking-wide text-subtle">Response</h3>
-            <ol className="list-decimal space-y-1 pl-4 text-[13px] text-muted">
+            <h3 className="mb-1.5 eyebrow">Response</h3>
+            <ol className="list-decimal space-y-1 pl-4 text-sm text-muted">
               {rule.response.map((s) => (
                 <li key={s}>{s}</li>
               ))}
@@ -216,8 +216,8 @@ function Rules() {
   return (
     <>
       <PageHeader
-        title="Detection Rules"
-        description="The Python detection engine evaluates these rules over normalized events. Each rule is unit-tested, mapped to MITRE ATT&CK and documents its false positives and response steps."
+        title="Detection rules"
+        description="Tune thresholds, backtest them on stored events, and export any rule as Sigma."
         actions={
           <>
           <Button asChild>
@@ -266,10 +266,10 @@ function Rules() {
                     !r.enabled && "opacity-55",
                   )}
                 >
-                  <span className="w-16 shrink-0 font-mono text-[11px] text-subtle">{r.id}</span>
+                  <span className="w-16 shrink-0 font-mono text-2xs text-subtle">{r.id}</span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13px] font-medium">{r.name}</span>
-                    <span className="block truncate text-[11px] text-subtle">{r.mitre.map((m) => m.technique_id).join(" · ")}</span>
+                    <span className="block truncate text-sm font-medium">{r.name}</span>
+                    <span className="block truncate text-2xs text-subtle">{r.mitre.map((m) => m.technique_id).join(" · ")}</span>
                   </span>
                   <SeverityBadge severity={r.severity} className="hidden sm:inline-flex" />
                   <span className="w-8 text-right font-mono text-xs tabular-nums text-muted" title="Alerts">

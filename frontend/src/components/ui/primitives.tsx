@@ -12,7 +12,7 @@ export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttribute
   <input
     ref={ref}
     className={cn(
-      "h-8 w-full min-w-0 rounded-md border border-border bg-surface px-2.5 text-[13px] text-foreground placeholder:text-subtle transition-colors",
+      "h-8 w-full min-w-0 rounded-md border border-border bg-surface px-2.5 text-sm text-foreground placeholder:text-subtle transition-colors",
       "hover:border-border-strong focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25",
       "disabled:opacity-50",
       className,
@@ -27,7 +27,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
     <textarea
       ref={ref}
       className={cn(
-        "min-h-20 w-full rounded-md border border-border bg-surface px-2.5 py-2 text-[13px] text-foreground placeholder:text-subtle",
+        "min-h-20 w-full rounded-md border border-border bg-surface px-2.5 py-2 text-sm text-foreground placeholder:text-subtle",
         "hover:border-border-strong focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25",
         className,
       )}
@@ -44,7 +44,7 @@ export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLab
 export function Kbd({ className, ...props }: React.HTMLAttributes<HTMLElement>) {
   return (
     <kbd
-      className={cn("inline-flex h-5 min-w-5 items-center justify-center rounded border border-border-strong bg-surface-2 px-1 font-mono text-[10px] text-muted", className)}
+      className={cn("inline-flex h-5 min-w-5 items-center justify-center rounded-sm border border-border-strong bg-surface-2 px-1 font-mono text-2xs text-muted", className)}
       {...props}
     />
   );
@@ -60,7 +60,7 @@ export function Separator({ className, vertical }: { className?: string; vertica
 
 /* ----------------------------------------------------------------- panel (the one surface container) */
 export function Panel({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <section className={cn("min-w-0 rounded-lg border border-border bg-surface", className)} {...props} />;
+  return <section className={cn("min-w-0 rounded-md border border-border bg-surface", className)} {...props} />;
 }
 
 export function PanelHeader({
@@ -77,8 +77,8 @@ export function PanelHeader({
   return (
     <header className={cn("flex min-h-11 flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-b border-border px-4 py-2.5", className)}>
       <div className="min-w-0">
-        <h2 className="truncate text-[13px] font-semibold text-foreground">{title}</h2>
-        {description && <p className="truncate text-xs text-muted">{description}</p>}
+        <h2 className="truncate text-sm font-semibold tracking-[-0.005em] text-foreground">{title}</h2>
+        {description && <p className="truncate text-xs text-subtle">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-1.5">{actions}</div>}
     </header>
@@ -108,7 +108,7 @@ export function Tooltip({
           side={side}
           sideOffset={6}
           className={cn(
-            "z-50 max-w-72 animate-in rounded-md border border-border-strong bg-elevated px-2.5 py-1.5 text-xs leading-relaxed text-foreground shadow-lg shadow-black/20",
+            "z-50 max-w-72 animate-in rounded-md border border-border-strong bg-elevated px-2.5 py-1.5 text-xs leading-relaxed text-foreground shadow-overlay",
             className,
           )}
         >
@@ -130,8 +130,8 @@ export function TabsTrigger({ className, ...props }: React.ComponentProps<typeof
   return (
     <TabsPrimitive.Trigger
       className={cn(
-        "relative -mb-px inline-flex h-9 items-center gap-1.5 border-b-2 border-transparent px-2.5 text-[13px] text-muted transition-colors hover:text-foreground",
-        "data-[state=active]:border-primary data-[state=active]:text-foreground [&_svg]:size-3.5",
+        "relative -mb-px inline-flex h-9 items-center gap-1.5 border-b-2 border-transparent px-2.5 text-sm text-muted transition-colors hover:text-foreground",
+        "data-[state=active]:border-foreground data-[state=active]:text-foreground [&_svg]:size-3.5",
         className,
       )}
       {...props}
@@ -146,7 +146,7 @@ export function Switch({ className, ...props }: React.ComponentProps<typeof Swit
   return (
     <SwitchPrimitive.Root
       className={cn(
-        "inline-flex h-[18px] w-8 shrink-0 cursor-pointer items-center rounded-full border border-transparent bg-border-strong transition-colors data-[state=checked]:bg-primary disabled:opacity-50",
+        "inline-flex h-[18px] w-8 shrink-0 cursor-pointer items-center rounded-full border border-transparent bg-border-strong transition-colors data-[state=checked]:bg-action disabled:opacity-50",
         className,
       )}
       {...props}

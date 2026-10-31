@@ -65,7 +65,7 @@ export function QueryBar({
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="outcome:failure host:bastion-01 | stats count by source_ip"
-            className="pl-6 font-mono text-[12.5px]"
+            className="pl-6 font-mono text-xs"
             aria-label="Query"
             spellCheck={false}
             autoComplete="off"
@@ -85,7 +85,7 @@ export function QueryBar({
             {QUERY_EXAMPLES.map((ex) => (
               <DropdownMenuItem key={ex.query} className="h-auto flex-col items-start gap-0.5 py-1.5" onSelect={() => (setText(ex.query), onRun(ex.query))}>
                 <span>{ex.label}</span>
-                <code className="font-mono text-[11px] text-subtle">{ex.query}</code>
+                <code className="font-mono text-2xs text-subtle">{ex.query}</code>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
