@@ -42,22 +42,23 @@ flowchart LR
 |---|---|
 | `app/models/` | Pydantic models - the API contract and the persisted schema |
 | `app/parsers/` | Windows JSON, Linux auth.log and normalized parsers + format detection |
-| `app/detection/` | Rule base classes, the 14 rules, the engine, inventory and MITRE catalog |
+| `app/detection/` | Rule base classes, the 17 rules, the engine, inventory, threat-intel feed, Sigma export and MITRE catalog |
 | `app/simulation/` | Scenario rendering and the deterministic baseline generator |
 | `app/services/` | Orchestration (`lab.py`), queries, analytics, entities, reports, ingestion |
-| `app/storage/` | Atomic JSON persistence and in-memory repositories |
+| `app/storage/` | SQLite and JSON persistence behind in-memory repositories |
 | `app/api/` | FastAPI routers (OpenAPI at `/docs`) |
 | `data/` | Read-only reference data: seed events, scenarios, inventory, ATT&CK subset |
 
 ## Persistence
 
-* One JSON file per collection under `SOCLAB_STATE_DIR` with an envelope (`schema_version`, `collection`, `meta`, `items`).
-* Writes use *temp file -> fsync -> `os.replace`*, so a crash leaves either the old or the new file, never a torn one.
-* On load, unreadable files are quarantined (`*.corrupt-<ts>.json`) and invalid records are skipped and counted; the
-  status endpoint reports recovered collections.
-* All mutations go through `LabService` while holding one re-entrant lock.
-* Services only use `LabStore`/`Collection` methods (`get`, `all`, `upsert`, `persist`), so a SQLite/PostgreSQL implementation
-  can replace `app/storage/repository.py` without touching the rest of the code.
+* Default backend: **SQLite** (`state/lab.db`, WAL journal). Each collection item is a JSON document keyed by
+  (collection, key). On save, only rows whose serialized form changed since the last save are written, in one transaction
+  per collection; events are append-only, so only new event ids are inserted.
+* Alternative backend: one JSON file per collection (`SOCLAB_STORAGE_BACKEND=json`), written temp file -> fsync -> `os.replace`.
+* State written by the JSON backend is migrated into SQLite automatically on first start (originals kept in `state/json-backup/`).
+* Unreadable files or databases are quarantined (`*.corrupt-<ts>`) and the lab starts clean; the status endpoint reports it.
+* All mutations go through `LabService` while holding one re-entrant lock. Services only use `LabStore`/`Collection`
+  methods, so a PostgreSQL backend means implementing the small `_Backend` protocol in `app/storage/repository.py`.
 
 ## Time model
 

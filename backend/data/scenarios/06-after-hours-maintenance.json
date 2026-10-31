@@ -6,12 +6,28 @@
   "category": "False Positive Training",
   "level": "N1",
   "expected_severity": "medium",
-  "expected_rules": ["LAB-005"],
+  "expected_rules": [
+    "LAB-005"
+  ],
   "benign": true,
   "time_of_day_local": "01:40",
-  "maintenance_window": {"description": "Emergency patch for file server (KB update)", "usernames": ["adm.roliveira"], "hosts": ["fs-01"], "duration_minutes": 120},
-  "mitre": ["T1078"],
-  "hosts": ["fs-01", "ws-it-04"],
+  "maintenance_window": {
+    "description": "Emergency patch for file server (KB update)",
+    "usernames": [
+      "adm.roliveira"
+    ],
+    "hosts": [
+      "fs-01"
+    ],
+    "duration_minutes": 120
+  },
+  "mitre": [
+    "T1078"
+  ],
+  "hosts": [
+    "fs-01",
+    "ws-it-04"
+  ],
   "learning_objectives": [
     "Use context (change calendar, source host, account owner) to triage an alert.",
     "Document a false-positive / benign decision properly.",
@@ -28,45 +44,136 @@
     {
       "format": "windows_json",
       "offset_seconds": 0,
-      "random_int": {"port": [49152, 65535]},
+      "random_int": {
+        "port": [
+          49152,
+          65535
+        ]
+      },
       "record": {
-        "EventID": 4624, "TimeCreated": "{ts}", "Computer": "FS-01.corp.lab", "Channel": "Security",
-        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
-        "EventData": {"TargetUserName": "adm.roliveira", "TargetDomainName": "CORP", "LogonType": "10",
-                      "IpAddress": "10.10.10.24", "IpPort": "{port}", "WorkstationName": "WS-IT-04",
-                      "AuthenticationPackageName": "Kerberos"}
+        "EventID": 4624,
+        "TimeCreated": "{ts}",
+        "Computer": "FS-01.corp.lab",
+        "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing",
+        "Level": "Information",
+        "EventData": {
+          "TargetUserName": "adm.roliveira",
+          "TargetDomainName": "CORP",
+          "LogonType": "10",
+          "IpAddress": "10.10.10.24",
+          "IpPort": "{port}",
+          "WorkstationName": "WS-IT-04",
+          "AuthenticationPackageName": "Kerberos"
+        }
       }
     },
     {
       "format": "windows_json",
       "offset_seconds": 1,
       "record": {
-        "EventID": 4672, "TimeCreated": "{ts}", "Computer": "FS-01.corp.lab", "Channel": "Security",
-        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
-        "EventData": {"SubjectUserName": "adm.roliveira", "SubjectDomainName": "CORP",
-                      "PrivilegeList": "SeBackupPrivilege SeRestorePrivilege SeShutdownPrivilege"}
+        "EventID": 4672,
+        "TimeCreated": "{ts}",
+        "Computer": "FS-01.corp.lab",
+        "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing",
+        "Level": "Information",
+        "EventData": {
+          "SubjectUserName": "adm.roliveira",
+          "SubjectDomainName": "CORP",
+          "PrivilegeList": "SeBackupPrivilege SeRestorePrivilege SeShutdownPrivilege"
+        }
       }
     },
     {
       "format": "windows_json",
       "offset_seconds": 140,
       "record": {
-        "EventID": 4688, "TimeCreated": "{ts}", "Computer": "FS-01.corp.lab", "Channel": "Security",
-        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
-        "EventData": {"SubjectUserName": "adm.roliveira", "SubjectDomainName": "CORP",
-                      "NewProcessName": "C:\\Windows\\System32\\wusa.exe",
-                      "CommandLine": "wusa.exe C:\\Patches\\windows-kb-update-x64.msu /quiet /norestart",
-                      "ParentProcessName": "C:\\Windows\\explorer.exe"}
+        "EventID": 4688,
+        "TimeCreated": "{ts}",
+        "Computer": "FS-01.corp.lab",
+        "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing",
+        "Level": "Information",
+        "EventData": {
+          "SubjectUserName": "adm.roliveira",
+          "SubjectDomainName": "CORP",
+          "NewProcessName": "C:\\Windows\\System32\\wusa.exe",
+          "CommandLine": "wusa.exe C:\\Patches\\windows-kb-update-x64.msu /quiet /norestart",
+          "ParentProcessName": "C:\\Windows\\explorer.exe"
+        }
       }
     },
     {
       "format": "windows_json",
       "offset_seconds": 2400,
       "record": {
-        "EventID": 4634, "TimeCreated": "{ts}", "Computer": "FS-01.corp.lab", "Channel": "Security",
-        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
-        "EventData": {"TargetUserName": "adm.roliveira", "TargetDomainName": "CORP", "LogonType": "10"}
+        "EventID": 4634,
+        "TimeCreated": "{ts}",
+        "Computer": "FS-01.corp.lab",
+        "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing",
+        "Level": "Information",
+        "EventData": {
+          "TargetUserName": "adm.roliveira",
+          "TargetDomainName": "CORP",
+          "LogonType": "10"
+        }
       }
+    }
+  ],
+  "challenge": [
+    {
+      "id": "change",
+      "question": "Which approved change ticket covers this activity?",
+      "kind": "text",
+      "answers": [
+        "{change_id}"
+      ],
+      "hint": "The alert's false-positive indicators (and Lab Settings > change windows) mention the ticket.",
+      "explanation": "{change_id} authorises adm.roliveira on fs-01 for this window: the context that justifies the logon."
+    },
+    {
+      "id": "source",
+      "question": "From which workstation was the RDP session started?",
+      "kind": "text",
+      "answers": [
+        "ws-it-04",
+        "10.10.10.24"
+      ],
+      "hint": "Source IP / WorkstationName of the 4624 logon type 10.",
+      "explanation": "ws-it-04 is the IT admin workstation owned by Rafael Oliveira, consistent with legitimate work."
+    },
+    {
+      "id": "activity",
+      "question": "What did the administrator do during the session?",
+      "kind": "choice",
+      "answers": [
+        "Installed a Windows update with wusa.exe"
+      ],
+      "hint": "Look at the 4688 process events on fs-01 during the session.",
+      "explanation": "Only wusa.exe installing a patch, within the scope of the change.",
+      "options": [
+        "Installed a Windows update with wusa.exe",
+        "Created a new service",
+        "Added a user to Domain Admins",
+        "Cleared the Security log"
+      ]
+    },
+    {
+      "id": "classification",
+      "question": "How should this alert be closed?",
+      "kind": "choice",
+      "answers": [
+        "Benign true positive"
+      ],
+      "hint": "The rule did exactly what it was designed to do. Was the activity authorised?",
+      "explanation": "The detection was correct (privileged off-hours logon) but authorised: benign true positive, documented with the ticket.",
+      "options": [
+        "True positive",
+        "Benign true positive",
+        "False positive"
+      ]
     }
   ]
 }

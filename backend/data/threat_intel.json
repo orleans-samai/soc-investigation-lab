@@ -1,0 +1,14 @@
+{
+  "source": "Lab Threat Intel feed (synthetic indicators: RFC 5737 addresses and .example domains)",
+  "updated": "2026-10-28",
+  "indicators": [
+    {"type": "ip", "value": "203.0.113.80", "threat": "Malware staging server used by PowerShell download cradles", "severity": "high", "confidence": 90, "first_seen": "2026-09-02"},
+    {"type": "ip", "value": "198.51.100.66", "threat": "Exfiltration endpoint linked to credential stealers", "severity": "critical", "confidence": 85, "first_seen": "2026-10-11"},
+    {"type": "ip", "value": "203.0.113.199", "threat": "Known SSH scanning botnet node", "severity": "medium", "confidence": 60, "first_seen": "2026-08-19"},
+    {"type": "ip", "value": "198.51.100.212", "threat": "Tor exit node", "severity": "medium", "confidence": 70, "first_seen": "2026-07-30"},
+    {"type": "domain", "value": "cdn-telemetry-update.example", "threat": "Command-and-control / exfiltration domain of a credential stealer", "severity": "critical", "confidence": 95, "first_seen": "2026-10-14"},
+    {"type": "domain", "value": "invoice-portal-secure.example", "threat": "Phishing landing page impersonating a supplier portal", "severity": "high", "confidence": 80, "first_seen": "2026-10-20"},
+    {"type": "sha256", "value": "77d4b7dd3207708cad149e53495028210de3f2ba482f460b0c8e55b4b47bbfdd", "threat": "Renamed ProcDump binary used to dump LSASS memory", "severity": "critical", "confidence": 95, "first_seen": "2026-10-09"},
+    {"type": "sha256", "value": "a41fe59a34c883316b48f7434ba5d62e69eac285a40c74252f36f4be0d0ee09c", "threat": "Macro dropper delivered in invoice-themed documents", "severity": "high", "confidence": 85, "first_seen": "2026-10-18"}
+  ]
+}

@@ -13,6 +13,7 @@ class EventSource(StrEnum):
     windows_security = "windows_security"
     windows_system = "windows_system"
     windows_powershell = "windows_powershell"
+    windows_sysmon = "windows_sysmon"
     linux_auth = "linux_auth"
     internal = "internal"
 
@@ -25,6 +26,8 @@ class EventType(StrEnum):
     privilege = "privilege"
     persistence = "persistence"
     audit = "audit"
+    network = "network"
+    file = "file"
     other = "other"
 
 

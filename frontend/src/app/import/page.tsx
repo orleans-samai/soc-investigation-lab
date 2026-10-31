@@ -26,6 +26,7 @@ const TIMEZONES = ["UTC", "America/Sao_Paulo", "America/New_York", "Europe/Londo
 
 const SAMPLES = [
   { file: "windows_security_sample.json", label: "Windows Security events", note: "4625 burst + 4624, JSON array" },
+  { file: "sysmon_sample.json", label: "Sysmon events", note: "LSASS access (one benign, one malicious) + phishing DNS" },
   { file: "linux_auth_sample.log", label: "Linux auth.log", note: "Classic syslog, needs year + timezone" },
   { file: "normalized_sample.json", label: "Normalized events", note: "Lab schema, as exported by the Log Explorer" },
   { file: "malformed_sample.log", label: "Malformed file", note: "Shows per-line error reporting" },
@@ -322,7 +323,7 @@ export default function ImportPage() {
             <div className="space-y-3 p-4 text-xs leading-relaxed text-muted">
               <p>
                 <strong className="text-foreground">Windows</strong> - JSON array, NDJSON or <code>{"{ events: [...] }"}</code> with <code>EventID</code>, <code>TimeCreated</code>,{" "}
-                <code>Computer</code>, <code>EventData</code>. Mapped IDs: 4624, 4625, 4634, 4672, 4688, 4697, 4698, 4720, 4722, 4724, 4726, 4728, 4732, 4740, 4756, 1102, 4104, 7045.
+                <code>Computer</code>, <code>EventData</code>. Mapped IDs: 4624, 4625, 4634, 4672, 4688, 4697, 4698, 4720, 4722, 4724, 4726, 4728, 4732, 4740, 4756, 1102, 4104, 7045, plus Sysmon 1, 3, 10, 11 and 22 (Channel Microsoft-Windows-Sysmon/Operational).
               </p>
               <p>
                 <strong className="text-foreground">Linux</strong> - auth.log/secure lines from sshd, sudo, su, useradd, usermod, gpasswd, groupadd, cron and systemd-logind, in classic

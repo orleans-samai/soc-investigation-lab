@@ -6,6 +6,7 @@ import os
 import sys
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -35,6 +36,8 @@ class Settings(BaseSettings):
     data_dir: Path = BACKEND_ROOT / "data"
     # Mutable lab state (events, alerts, incidents...). Safe to delete: it is rebuilt from the seed.
     state_dir: Path = _default_state_dir()
+    # sqlite (default, incremental transactional writes) or json (one human-readable file per collection).
+    storage_backend: Literal["sqlite", "json"] = "sqlite"
     # Optional: exported Next.js UI (frontend/out) served at "/" so the app runs from a single origin.
     static_dir: Path | None = None
 

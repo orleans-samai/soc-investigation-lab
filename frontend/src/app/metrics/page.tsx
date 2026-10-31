@@ -130,7 +130,16 @@ export default function MetricsPage() {
           </Panel>
 
           <Panel className="overflow-hidden">
-            <PanelHeader title="Simulation detection coverage" description="Did every scenario trigger the rules it was designed to exercise?" />
+            <PanelHeader
+              title="Simulation detection coverage"
+              description="Did every scenario trigger the rules it was designed to exercise?"
+              actions={
+                <span className="text-xs text-muted">
+                  Challenges: {m.simulation.challenges_completed} completed
+                  {m.simulation.challenge_average_pct !== null && <> · avg score {m.simulation.challenge_average_pct}%</>}
+                </span>
+              }
+            />
             <div className="overflow-x-auto">
               <table className={tableCls.table}>
                 <thead className={tableCls.head}>

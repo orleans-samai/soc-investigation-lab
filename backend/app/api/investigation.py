@@ -93,6 +93,7 @@ def update_incident(lab: Lab, incident_id: str, body: IncidentUpdate):
         changes: list[str] = []
         if body.title and body.title != incident.title:
             incident.title = body.title.strip()
+            incident.title_locked = True
             changes.append("title updated")
         if body.assignee is not None and body.assignee != incident.assignee:
             incident.assignee = body.assignee.strip() or None
@@ -237,11 +238,30 @@ def system_status(lab: Lab):
             "imports": len(store.imports),
         },
         "storage": {
-            "backend": "json-files",
-            "recovered_collections": [c._file.collection for c in store.collections if c.recovered],
+            "backend": store.backend_kind,
+            "recovered_collections": store.recovered_collections,
+            "migrated_from_json": store.migrated_from_json,
         },
         "limits": {"max_upload_mb": lab.settings.max_upload_mb, "max_import_lines": lab.settings.max_import_lines},
         "severities": [s.value for s in Severity],
+    }
+
+
+@router.get("/threat-intel", tags=["system"])
+def threat_intel(lab: Lab):
+    """The local threat-intelligence feed used by rule LAB-016, with how often each indicator matched."""
+    feed = lab.context.threat_intel
+    if feed is None:
+        return {"source": "none", "updated": None, "indicators": []}
+    matches: dict[str, int] = {}
+    for alert in lab.store.alerts.all():
+        if alert.rule_id == "LAB-016":
+            value = alert.fingerprint.split("|")[1]
+            matches[value] = matches.get(value, 0) + 1
+    return {
+        "source": feed.source,
+        "updated": feed.updated,
+        "indicators": [{**i.model_dump(), "alerts": matches.get(i.value.lower(), 0)} for i in feed.indicators],
     }
 
 

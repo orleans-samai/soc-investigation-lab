@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 AUTH_LOG = (
     "\n".join(
         f"Oct 31 03:10:{i * 5:02d} bastion-01 sshd[{4000 + i}]: Failed password for root from 203.0.113.200 port {50000 + i} ssh2"
@@ -57,7 +59,7 @@ def test_simulation_creates_alerts_and_incident(client):
     assert body["run"]["missed_rules"] == [] and body["highest_severity"] == "critical"
     incident_id = body["run"]["incident_ids"][0]
     detail = client.get(f"/api/incidents/{incident_id}").json()
-    assert {a["rule_id"] for a in detail["alerts"]} == {"LAB-009", "LAB-010"}
+    assert {a["rule_id"] for a in detail["alerts"]} == {"LAB-009", "LAB-010", "LAB-016", "LAB-017"}
     assert detail["playbook"]
 
     report = client.get(f"/api/incidents/{incident_id}/report").json()
@@ -133,14 +135,46 @@ def test_reset_requires_confirmation_and_restores_seed(client):
     assert client.get("/api/simulations/runs").json() == []
 
 
-def test_state_survives_restart(settings):
+@pytest.mark.parametrize("backend", ["sqlite", "json"])
+def test_state_survives_restart(tmp_path, backend):
     from fastapi.testclient import TestClient
 
+    from app.config import Settings
     from app.main import create_app
 
+    settings = Settings(state_dir=tmp_path / "state", storage_backend=backend)
     with TestClient(create_app(settings)) as c:
         run = c.post("/api/simulations/run", json={"scenario_id": "linux-backdoor-account", "seed": 5}).json()["run"]
+        c.patch("/api/rules/LAB-001", json={"enabled": False})
     with TestClient(create_app(settings)) as c:
         assert c.get(f"/api/simulations/runs/{run['id']}").status_code == 200
-        state = json.loads((settings.state_dir / "events.json").read_text(encoding="utf-8"))
-        assert state["schema_version"] == 1
+        assert next(r for r in c.get("/api/rules").json() if r["id"] == "LAB-001")["enabled"] is False
+        assert c.get("/api/system/status").json()["storage"]["backend"] == backend
+    if backend == "json":
+        assert json.loads((settings.state_dir / "events.json").read_text(encoding="utf-8"))["schema_version"] == 1
+    else:
+        assert (settings.state_dir / "lab.db").exists() and not (settings.state_dir / "events.json").exists()
+
+
+def test_challenge_mode_scoring(client):
+    run = client.post("/api/simulations/run", json={"scenario_id": "ssh-bruteforce-compromise", "seed": 11}).json()["run"]
+    url = f"/api/simulations/runs/{run['id']}/challenge"
+    view = client.get(url).json()
+    assert view["max_score"] == 100 and not view["submitted"]
+    assert all("expected" not in q and q["hint"] is None for q in view["questions"]), "answers must not leak before submission"
+
+    hinted = client.post(f"{url}/hint", json={"question_id": "account"}).json()
+    assert next(q for q in hinted["questions"] if q["id"] == "account")["hint"]
+
+    answers = {
+        "source_ip": f"  {run['variables']['attacker_ip']} ",  # whitespace is tolerated
+        "account": "deploy",
+        "next_step": "Run commands as root with sudo",
+        "classification": "False positive",  # wrong on purpose
+    }
+    result = client.post(url, json={"answers": answers}).json()
+    assert result["submitted"] and result["score"] == 25 + 12 + 25  # hint halves 'account'
+    wrong = next(q for q in result["questions"] if q["id"] == "classification")
+    assert wrong["correct"] is False and wrong["expected"] == "True positive"
+    assert client.post(url, json={"answers": answers}).status_code == 409
+    assert client.get("/api/metrics").json()["simulation"]["challenges_completed"] == 1

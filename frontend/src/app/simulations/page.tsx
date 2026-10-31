@@ -9,6 +9,7 @@ import useSWR from "swr";
 
 import { SeverityBadge, StatusBadge, Tag } from "@/components/soc/badges";
 import { EmptyState, PageHeader, tableCls } from "@/components/soc/common";
+import { ChallengePanel } from "@/components/soc/challenge-panel";
 import { useInvestigation } from "@/components/soc/investigation-context";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Panel, PanelHeader, Skeleton } from "@/components/ui/primitives";
@@ -186,6 +187,7 @@ function Simulations() {
                       <Tag>{s.category}</Tag>
                       <Tag>{s.level}</Tag>
                       {s.benign && <Tag className="text-success">benign</Tag>}
+                      {s.challenge_points > 0 && <Tag>{s.challenge_points} pts</Tag>}
                     </div>
                   </div>
                   <div className="shrink-0 text-right text-[11px] text-subtle">
@@ -268,6 +270,7 @@ function Simulations() {
                 )}
               </div>
             </Panel>
+            {runId && <ChallengePanel key={`challenge-${runId}`} runId={runId} />}
           </div>
         ) : (
           <Skeleton className="h-96 w-full" />

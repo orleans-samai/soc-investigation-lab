@@ -31,6 +31,8 @@ class Note(ApiModel):
 class Incident(ApiModel):
     id: str
     title: str
+    # Set once an analyst renames the incident, so automatic correlation stops retitling it.
+    title_locked: bool = False
     summary: str
     severity: Severity
     status: IncidentStatus = IncidentStatus.new

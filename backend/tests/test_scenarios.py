@@ -53,3 +53,18 @@ def test_after_hours_scenario_starts_at_night():
     scenario = SCENARIOS["after-hours-maintenance"]
     start = choose_start(scenario, ANCHOR, random.Random(3), TZ).astimezone(TZ)
     assert (start.hour, start.minute // 10) == (1, 4)
+
+
+@pytest.mark.parametrize("scenario_id", sorted(SCENARIOS))
+def test_challenge_answers_are_resolvable(scenario_id):
+    from app.services.challenge import expected_answers
+
+    scenario = SCENARIOS[scenario_id]
+    assert len(scenario.challenge) >= 3
+    rendered = render(scenario, ANCHOR, 5, dataset="test")
+    variables = {**rendered.variables, "change_id": "CHG-2500"}
+    for q in scenario.challenge:
+        answers = expected_answers(q, variables)
+        assert all("{" not in a for a in answers), f"{q.id} references an unknown variable"
+        if q.kind == "choice":
+            assert answers[0] in q.options, f"{q.id}: answer must be one of the options"

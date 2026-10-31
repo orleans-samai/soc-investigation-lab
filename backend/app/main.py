@@ -24,6 +24,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lab.startup()
         app.state.lab = lab
         yield
+        with lab.store.lock:
+            lab.store.persist_all()
+            lab.store.close()
 
     app = FastAPI(
         title="SOC Investigation Lab API",

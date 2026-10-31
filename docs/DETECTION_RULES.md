@@ -1,10 +1,11 @@
 # Detection Rules
 
-> Generated from the rule classes in `backend/app/detection/rules/` - the code is the source of truth.
+> Generated from the rule classes in `backend/app/detection/rules/` (`python -m scripts.generate_rules_doc`).
+> The code is the source of truth. Every rule can also be exported as Sigma YAML from the Detection Rules page
+> or `GET /api/rules/{id}/sigma`.
 
-Every rule receives the full, time-sorted list of normalized events and returns alert drafts. Rules are pure functions of
-(events, parameters, inventory): no I/O, no global state, which is why each one has unit tests in `backend/tests/test_detection.py`
-and an end-to-end validation in `backend/tests/test_scenarios.py`.
+Rules are pure functions of (events, parameters, inventory, threat-intel feed): no I/O and no global state. Each one
+has unit tests in `backend/tests/` and an end-to-end validation in `backend/tests/test_scenarios.py`.
 
 | ID | Rule | Type | Default severity | MITRE ATT&CK | Validated by scenario |
 |---|---|---|---|---|---|
@@ -22,6 +23,9 @@ and an end-to-end validation in `backend/tests/test_scenarios.py`.
 | LAB-012 | New Service Installed | single_event | medium | T1543.003 | `lateral-movement-service` |
 | LAB-013 | Lateral Movement: Logons to Multiple Hosts | threshold | high | T1021.002, T1021.001 | `lateral-movement-service` |
 | LAB-014 | Sudo Privilege Escalation Attempt | threshold | medium | T1548.003 | `ssh-bruteforce-compromise` |
+| LAB-015 | LSASS Memory Access | behavioral | critical | T1003.001 | `lsass-credential-dumping` |
+| LAB-016 | Threat Intelligence Indicator Match | enrichment | high | T1071 | `powershell-download-cradle`, `lsass-credential-dumping` |
+| LAB-017 | Office Application Spawned a Shell | single_event | high | T1204.002 | `powershell-download-cradle` |
 
 ## LAB-001 - SSH Brute Force
 
@@ -462,3 +466,87 @@ event_source = linux_auth AND (event_action = sudo_denied
 
 1. Ask the user what they were trying to do and review the commands attempted.
 2. If the account is shared or was recently compromised, reset it and review its SSH keys.
+
+## LAB-015 - LSASS Memory Access
+
+A non-system process opened lsass.exe with rights that allow reading its memory (credential dumping).
+
+- **Type:** behavioral  
+- **Data sources:** windows_sysmon  
+- **Severity:** critical  
+- **ATT&CK:** [T1003.001](https://attack.mitre.org/techniques/T1003/001/) OS Credential Dumping: LSASS Memory (Credential Access)
+
+**Logic**
+
+```text
+event_source = windows_sysmon AND event_id = 10 AND fields.target_image ends with lsass.exe
+| where fields.granted_access in (0x1010, 0x1410, 0x1438, 0x143a, 0x1fffff, ...)
+| where process_name not in (MsMpEng.exe, csrss.exe, wininit.exe, services.exe, svchost.exe, ...)
+```
+
+**Known false positives**
+
+- EDR / antivirus products and backup agents that legitimately read LSASS (allow-list them by signed path).
+- Administrators running diagnostic tools such as Process Explorer.
+
+**Response**
+
+1. Isolate the host immediately: credentials of every account logged on to it must be considered stolen.
+2. Collect the dumping binary and any dump file written to disk (Sysmon 11).
+3. Reset passwords and revoke tickets for accounts with sessions on the host; hunt for their reuse elsewhere.
+
+## LAB-016 - Threat Intelligence Indicator Match
+
+An event references an IP, domain, URL or file hash listed in the threat-intelligence feed.
+
+- **Type:** enrichment  
+- **Data sources:** windows_security, windows_sysmon, windows_powershell, linux_auth  
+- **Severity:** high  
+- **ATT&CK:** [T1071](https://attack.mitre.org/techniques/T1071/) Application Layer Protocol (Command and Control)
+
+**Logic**
+
+```text
+for each event: extract source/destination IP, DNS query, destination hostname,
+  URLs (and their hosts) in command_line, SHA256 hash
+| lookup threat_intel on (type, value)
+| severity = indicator severity; one alert per indicator and host per hour
+```
+
+**Known false positives**
+
+- Stale indicators: infrastructure is re-used or re-assigned after a campaign ends.
+- Low-confidence feed entries (shared hosting, CDNs, Tor exit nodes used by legitimate users).
+
+**Response**
+
+1. Confirm the match in the raw event and check the indicator's confidence and age.
+2. Block the indicator at the firewall / proxy / EDR and search for it across all hosts.
+3. Investigate the process and account that produced the event on the affected host.
+
+## LAB-017 - Office Application Spawned a Shell
+
+An Office application started a command interpreter or LOLBin, typical of malicious macros.
+
+- **Type:** single_event  
+- **Data sources:** windows_security, windows_sysmon  
+- **Severity:** high  
+- **ATT&CK:** [T1204.002](https://attack.mitre.org/techniques/T1204/002/) User Execution: Malicious File (Execution)
+
+**Logic**
+
+```text
+event_action = process_created (4688 / Sysmon 1)
+| where parent_process in (WINWORD, EXCEL, POWERPNT, OUTLOOK, ...)
+|   AND process_name in (powershell, cmd, wscript, cscript, mshta, rundll32, regsvr32, certutil, bitsadmin)
+```
+
+**Known false positives**
+
+- Legacy business macros or add-ins that call scripts (they should be signed and documented).
+
+**Response**
+
+1. Identify the document that was opened and where it came from (mail, download, share).
+2. Review the child process command line and everything it spawned or downloaded.
+3. Quarantine the document organisation-wide and block macros in files from the internet (Mark of the Web).

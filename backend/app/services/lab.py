@@ -18,6 +18,7 @@ from app.detection.base import DetectionContext
 from app.detection.engine import DetectionEngine, RuleConfig
 from app.detection.inventory import Inventory, MaintenanceWindow
 from app.detection.mitre import MitreCatalog
+from app.detection.threat_intel import ThreatIntelFeed
 from app.models.alerts import Alert, AlertStatus, RuleOverride
 from app.models.common import MitreRef, Severity, utcnow
 from app.models.events import NormalizedEvent
@@ -68,11 +69,12 @@ class LabService:
             inventory=self.inventory,
             timezone=self.timezone,
             business_hours=(settings.business_hours_start, settings.business_hours_end),
+            threat_intel=ThreatIntelFeed.load(settings.data_dir / "threat_intel.json"),
         )
         self.engine = DetectionEngine(self.context)
         self.mitre = MitreCatalog.load(settings.data_dir / "mitre_attack.json")
         self.scenarios = load_scenarios(settings.scenarios_dir)
-        self.store = LabStore(settings.state_dir)
+        self.store = LabStore(settings.state_dir, settings.storage_backend)
 
     # ------------------------------------------------------------------ lifecycle
     def startup(self) -> None:
@@ -127,7 +129,7 @@ class LabService:
         items = self.store.activity.all()
         if len(items) > MAX_ACTIVITY:
             for old in sorted(items, key=lambda a: a.timestamp)[: len(items) - MAX_ACTIVITY]:
-                self.store.activity._items.pop(old.id, None)
+                self.store.activity.remove(old.id)
         return entry
 
     def rule_config(self) -> dict[str, RuleConfig]:
@@ -218,6 +220,7 @@ class LabService:
         incident = Incident(
             id=self._next_incident_id(),
             title=title or "",
+            title_locked=title is not None,
             summary="",
             severity=lead.severity,
             first_seen=min(a.first_seen for a in alerts),
@@ -264,7 +267,7 @@ class LabService:
         incident.first_seen = min(a.first_seen for a in alerts)
         incident.last_seen = max(a.timestamp for a in alerts)
         incident.severity = Severity.max([incident.severity, *[a.severity for a in alerts]])
-        if auto_title:
+        if auto_title and not incident.title_locked:
             subject = lead.username or lead.source_ip or lead.hostname or "unknown entity"
             where = f" on {lead.hostname}" if lead.hostname and lead.hostname != subject else ""
             incident.title = f"{lead.rule_name}: {subject}{where}"

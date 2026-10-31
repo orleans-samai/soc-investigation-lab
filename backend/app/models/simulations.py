@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import Field
 
@@ -25,6 +25,19 @@ class ScenarioMaintenance(ApiModel):
     duration_minutes: int = Field(default=60, ge=1, le=24 * 60)
 
 
+class ChallengeQuestion(ApiModel):
+    """A question the analyst answers from the evidence. Answers may reference run variables ({attacker_ip})."""
+
+    id: str
+    question: str
+    kind: Literal["text", "choice"] = "text"
+    options: list[str] = Field(default_factory=list)
+    answers: list[str] = Field(min_length=1)
+    points: int = Field(default=25, ge=1, le=100)
+    hint: str
+    explanation: str
+
+
 class Scenario(ApiModel):
     id: str
     name: str
@@ -45,6 +58,7 @@ class Scenario(ApiModel):
     investigation_questions: list[str]
     variables: dict[str, list[Any]] = Field(default_factory=dict)
     steps: list[ScenarioStep]
+    challenge: list[ChallengeQuestion] = Field(default_factory=list)
 
 
 class ScenarioSummary(ApiModel):
@@ -62,6 +76,7 @@ class ScenarioSummary(ApiModel):
     learning_objectives: list[str]
     investigation_questions: list[str]
     event_estimate: int
+    challenge_points: int = 0
     run_count: int = 0
     last_run_id: str | None = None
 
@@ -69,6 +84,23 @@ class ScenarioSummary(ApiModel):
 class SimulationRequest(ApiModel):
     scenario_id: str
     seed: int | None = Field(default=None, ge=0, le=2**31)
+
+
+class ChallengeAttempt(ApiModel):
+    hints_used: list[str] = Field(default_factory=list)
+    answers: dict[str, str] = Field(default_factory=dict)
+    results: dict[str, bool] = Field(default_factory=dict)
+    score: int = 0
+    max_score: int = 0
+    submitted_at: UtcDatetime | None = None
+
+
+class ChallengeSubmission(ApiModel):
+    answers: dict[str, str] = Field(default_factory=dict)
+
+
+class HintRequest(ApiModel):
+    question_id: str
 
 
 class SimulationRun(ApiModel):
@@ -89,6 +121,7 @@ class SimulationRun(ApiModel):
     missed_rules: list[str]
     unexpected_rules: list[str]
     variables: dict[str, Any] = Field(default_factory=dict)
+    challenge: ChallengeAttempt = Field(default_factory=lambda: ChallengeAttempt())
 
     @property
     def fully_detected(self) -> bool:

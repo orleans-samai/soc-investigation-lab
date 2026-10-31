@@ -6,9 +6,19 @@
   "category": "Persistence",
   "level": "N2",
   "expected_severity": "critical",
-  "expected_rules": ["LAB-006", "LAB-007", "LAB-008"],
-  "mitre": ["T1078.003", "T1136.001", "T1098"],
-  "hosts": ["web-01"],
+  "expected_rules": [
+    "LAB-006",
+    "LAB-007",
+    "LAB-008"
+  ],
+  "mitre": [
+    "T1078.003",
+    "T1136.001",
+    "T1098"
+  ],
+  "hosts": [
+    "web-01"
+  ],
   "learning_objectives": [
     "Recognise the risk of direct root SSH logins.",
     "Track account creation and group changes in Linux auth logs.",
@@ -21,45 +31,144 @@
     "Which sshd configuration changes would prevent a repeat?"
   ],
   "variables": {
-    "attacker_ip": ["198.51.100.140", "198.51.100.177"],
-    "backdoor": ["sysbackup", "systemd-net", "postgres-adm"]
+    "attacker_ip": [
+      "198.51.100.140",
+      "198.51.100.177"
+    ],
+    "backdoor": [
+      "sysbackup",
+      "systemd-net",
+      "postgres-adm"
+    ]
   },
   "steps": [
     {
       "format": "linux_ssh",
       "offset_seconds": 0,
-      "random_int": {"pid": [40000, 49999], "port": [32768, 60999]},
+      "random_int": {
+        "pid": [
+          40000,
+          49999
+        ],
+        "port": [
+          32768,
+          60999
+        ]
+      },
       "line": "{ts} web-01 sshd[{pid}]: Accepted publickey for root from {attacker_ip} port {port} ssh2: ED25519 SHA256:q3Vf9kB0yXo1mJm2l8nX4tO7dS0aR5pK6wE1zC2vB7g"
     },
     {
       "format": "linux_ssh",
       "offset_seconds": 1,
-      "random_int": {"pid": [40000, 49999]},
+      "random_int": {
+        "pid": [
+          40000,
+          49999
+        ]
+      },
       "line": "{ts} web-01 sshd[{pid}]: pam_unix(sshd:session): session opened for user root(uid=0) by (uid=0)"
     },
     {
       "format": "linux_ssh",
       "offset_seconds": 64,
-      "random_int": {"pid": [50000, 50999]},
+      "random_int": {
+        "pid": [
+          50000,
+          50999
+        ]
+      },
       "line": "{ts} web-01 groupadd[{pid}]: group added to /etc/group: name={backdoor}, GID=1003"
     },
     {
       "format": "linux_ssh",
       "offset_seconds": 64,
-      "random_int": {"pid": [50000, 50999]},
+      "random_int": {
+        "pid": [
+          50000,
+          50999
+        ]
+      },
       "line": "{ts} web-01 useradd[{pid}]: new user: name={backdoor}, UID=1003, GID=1003, home=/home/{backdoor}, shell=/bin/bash, from=/dev/pts/0"
     },
     {
       "format": "linux_ssh",
       "offset_seconds": 92,
-      "random_int": {"pid": [51000, 51999]},
+      "random_int": {
+        "pid": [
+          51000,
+          51999
+        ]
+      },
       "line": "{ts} web-01 usermod[{pid}]: add '{backdoor}' to group 'sudo'"
     },
     {
       "format": "linux_ssh",
       "offset_seconds": 400,
-      "random_int": {"pid": [40000, 49999], "port": [32768, 60999]},
+      "random_int": {
+        "pid": [
+          40000,
+          49999
+        ],
+        "port": [
+          32768,
+          60999
+        ]
+      },
       "line": "{ts} web-01 sshd[{pid}]: Disconnected from user root {attacker_ip} port {port}"
+    }
+  ],
+  "challenge": [
+    {
+      "id": "source_ip",
+      "question": "From which IP address did the root login come?",
+      "kind": "text",
+      "answers": [
+        "{attacker_ip}"
+      ],
+      "hint": "The 'Accepted publickey for root' line on web-01.",
+      "explanation": "{attacker_ip} belongs to a cloud VPS range; nobody in the company logs in from there."
+    },
+    {
+      "id": "method",
+      "question": "Which authentication method was used?",
+      "kind": "choice",
+      "answers": [
+        "publickey"
+      ],
+      "hint": "Read the sshd 'Accepted ...' line in the raw log.",
+      "explanation": "publickey: the attacker had a valid private key. Rotate authorized_keys, not just passwords.",
+      "options": [
+        "password",
+        "publickey",
+        "keyboard-interactive",
+        "gssapi"
+      ]
+    },
+    {
+      "id": "backdoor",
+      "question": "Which backdoor account was created?",
+      "kind": "text",
+      "answers": [
+        "{backdoor}"
+      ],
+      "hint": "The useradd 'new user: name=...' line (LAB-007).",
+      "explanation": "{backdoor} was created with a system-like name to avoid attention."
+    },
+    {
+      "id": "group",
+      "question": "Which group was the backdoor added to?",
+      "kind": "choice",
+      "answers": [
+        "sudo"
+      ],
+      "hint": "The usermod line, rule LAB-008.",
+      "explanation": "sudo membership gives root access even after the stolen key is revoked.",
+      "options": [
+        "sudo",
+        "adm",
+        "docker",
+        "www-data"
+      ]
     }
   ]
 }

@@ -7,6 +7,7 @@ import useSWR from "swr";
 
 import { EmptyState, ErrorState, PageHeader, Pagination, Segmented, SortHeader, tableCls, Term } from "@/components/soc/common";
 import { EntityLink, useInvestigation } from "@/components/soc/investigation-context";
+import { drillDown, QueryBar } from "@/components/soc/query-bar";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Select } from "@/components/ui/overlays";
 import { Input, Label, Panel, Skeleton } from "@/components/ui/primitives";
@@ -32,7 +33,13 @@ const DEFAULTS = {
   order: "desc",
   page: "1",
   view: "normalized",
+  mode: "filters",
+  query: "",
 };
+
+type QueryResponse =
+  | (Page<NormalizedEvent> & { mode: "events"; scanned: number })
+  | { mode: "stats"; columns: string[]; rows: Record<string, string | number | null>[]; total: number; scanned: number };
 
 const LEVEL_STYLE: Record<string, string> = {
   info: "text-subtle",
@@ -58,6 +65,56 @@ function FacetSelect({ label, value, options, onChange, width = "w-40" }: { labe
   );
 }
 
+function StatsTable({
+  columns,
+  rows,
+  onDrill,
+}: {
+  columns: string[];
+  rows: Record<string, string | number | null>[];
+  onDrill: (row: Record<string, string | number | null>) => void;
+}) {
+  if (!rows.length) return <EmptyState icon={ScrollText} title="No events match the query" />;
+  const max = Math.max(...rows.map((r) => Number(r.count)));
+  return (
+    <div className="overflow-x-auto">
+      <table className={tableCls.table}>
+        <thead className={tableCls.head}>
+          <tr>
+            {columns.map((c) => (
+              <th key={c} className={cn(tableCls.th, c === "count" && "w-64")}>
+                {c}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i} tabIndex={0} title="Drill down into these events" onKeyDown={(e) => e.key === "Enter" && onDrill(row)} onClick={() => onDrill(row)} className={cn(tableCls.row, "cursor-pointer")}>
+              {columns.map((c) =>
+                c === "count" ? (
+                  <td key={c} className="px-3 py-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-2">
+                        <div className="h-full rounded-full bg-[var(--chart-1)]" style={{ width: `${(Number(row.count) / max) * 100}%` }} />
+                      </div>
+                      <span className="w-12 text-right font-mono text-xs tabular-nums">{nf.format(Number(row.count))}</span>
+                    </div>
+                  </td>
+                ) : (
+                  <td key={c} className="px-3 py-1.5 font-mono text-xs">
+                    {row[c] ?? <span className="text-subtle">(empty)</span>}
+                  </td>
+                ),
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function Explorer() {
   const [f, set, reset] = useUrlState(DEFAULTS);
   const { openEvent } = useInvestigation();
@@ -67,12 +124,26 @@ function Explorer() {
     return () => clearTimeout(t);
   }, [search, f.q, set]);
 
-  const { view, ...query } = f;
-  const filterQuery = { ...query, sort: undefined, order: undefined, page: undefined };
-  const { data, error, mutate, isLoading } = useSWR<Page<NormalizedEvent>>(`/events${qs({ ...query, page_size: 50 })}`, { keepPreviousData: true });
+  const { view, mode, query: dsl, ...filters } = f;
+  const queryMode = mode === "query";
+  const filterQuery = { ...filters, sort: undefined, order: undefined, page: undefined };
+  const filtered = useSWR<Page<NormalizedEvent>>(queryMode ? null : `/events${qs({ ...filters, page_size: 50 })}`, { keepPreviousData: true });
+  const searched = useSWR<QueryResponse>(queryMode ? `/events/query${qs({ q: dsl, page: f.page, page_size: 50 })}` : null, { keepPreviousData: true });
+  const data = queryMode ? (searched.data?.mode === "events" ? searched.data : undefined) : filtered.data;
+  const stats = queryMode && searched.data?.mode === "stats" ? searched.data : undefined;
+  const { error, mutate, isLoading } = queryMode ? searched : filtered;
+  const exportParams = queryMode ? { query: dsl } : filterQuery;
   const { data: facets } = useSWR<EventFacets>("/events/facets");
-  const onSort = (field: string) => set({ sort: field, order: f.sort === field && f.order === "desc" ? "asc" : "desc" });
-  const order = f.order as "asc" | "desc";
+  // In query mode the sort lives in the query itself ("| sort -field"), so headers rewrite that pipe.
+  const querySort = /\|\s*sort\s+(-?)(\w+)/i.exec(dsl);
+  const sortField = queryMode ? (querySort?.[2] ?? "timestamp") : f.sort;
+  const order = (queryMode ? (querySort ? (querySort[1] ? "desc" : "asc") : "desc") : f.order) as "asc" | "desc";
+  const onSort = (field: string) => {
+    const nextOrder = sortField === field && order === "desc" ? "asc" : "desc";
+    if (!queryMode) return set({ sort: field, order: nextOrder });
+    const base = dsl.replace(/\|\s*sort\s+\S+(\s+(asc|desc))?/gi, "").trim();
+    set({ query: `${base} | sort ${nextOrder === "desc" ? "-" : ""}${field}`.trim() });
+  };
   const active = Object.entries(filterQuery).filter(([, v]) => v);
 
   return (
@@ -100,12 +171,12 @@ function Explorer() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem asChild>
-                  <a href={`/api/events/export${qs({ ...filterQuery, format: "csv" })}`} download>
-                    <Download /> CSV (filtered results)
+                  <a href={`/api/events/export${qs({ ...exportParams, format: "csv" })}`} download>
+                    <Download /> CSV (current results)
                   </a>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <a href={`/api/events/export${qs({ ...filterQuery, format: "json" })}`} download>
+                  <a href={`/api/events/export${qs({ ...exportParams, format: "json" })}`} download>
                     <FileJson /> JSON, normalized schema
                   </a>
                 </DropdownMenuItem>
@@ -115,7 +186,31 @@ function Explorer() {
         }
       />
 
-      <Panel className="mb-3 p-3">
+      <div className="mb-2 flex items-center gap-3">
+        <Segmented
+          aria-label="Search mode"
+          value={queryMode ? "query" : "filters"}
+          onChange={(v) => set({ mode: v, page: "1" })}
+          options={[
+            { value: "filters", label: "Filters" },
+            { value: "query", label: "Query language" },
+          ]}
+        />
+        {queryMode && <span className="text-xs text-subtle">KQL/SPL-style search with aggregations</span>}
+      </div>
+
+      {queryMode && (
+        <Panel className="mb-3 p-3">
+          <QueryBar
+            value={dsl}
+            onRun={(q) => set({ query: q, page: "1" })}
+            matched={searched.data?.total}
+            scanned={searched.data?.scanned}
+          />
+        </Panel>
+      )}
+
+      <Panel className={cn("mb-3 p-3", queryMode && "hidden")}>
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative min-w-60 flex-1">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-subtle" />
@@ -169,7 +264,20 @@ function Explorer() {
 
       <Panel className="overflow-hidden">
         {error ? (
-          <ErrorState error={error} retry={() => mutate()} />
+          queryMode ? (
+            <div role="alert" className="px-4 py-6 text-[13px]">
+              <span className="font-medium text-critical">Query error: </span>
+              <span className="text-muted">{error.message}</span>
+            </div>
+          ) : (
+            <ErrorState error={error} retry={() => mutate()} />
+          )
+        ) : stats ? (
+          <StatsTable
+            columns={stats.columns}
+            rows={stats.rows}
+            onDrill={(row) => set({ query: drillDown(dsl, row, stats.columns), page: "1" })}
+          />
         ) : data?.total === 0 ? (
           <EmptyState icon={ScrollText} title="No events match" description="Relax the filters, or import a log file to add data." />
         ) : (
@@ -178,20 +286,20 @@ function Explorer() {
               <table className={tableCls.table}>
                 <thead className={tableCls.head}>
                   <tr>
-                    <SortHeader label="Timestamp (UTC)" field="timestamp" sort={f.sort} order={order} onSort={onSort} />
+                    <SortHeader label="Timestamp (UTC)" field="timestamp" sort={sortField} order={order} onSort={onSort} />
                     {view === "raw" ? (
                       <>
-                        <SortHeader label="Source" field="event_source" sort={f.sort} order={order} onSort={onSort} />
+                        <SortHeader label="Source" field="event_source" sort={sortField} order={order} onSort={onSort} />
                         <th className={tableCls.th}>Raw log</th>
                       </>
                     ) : (
                       <>
-                        <SortHeader label="Event ID" field="event_id" sort={f.sort} order={order} onSort={onSort} />
-                        <SortHeader label="Action" field="event_action" sort={f.sort} order={order} onSort={onSort} className="hidden md:table-cell" />
-                        <SortHeader label="Host" field="hostname" sort={f.sort} order={order} onSort={onSort} />
-                        <SortHeader label="User" field="username" sort={f.sort} order={order} onSort={onSort} className="hidden md:table-cell" />
-                        <SortHeader label="Source IP" field="source_ip" sort={f.sort} order={order} onSort={onSort} className="hidden lg:table-cell" />
-                        <SortHeader label="Level" field="log_level" sort={f.sort} order={order} onSort={onSort} className="hidden lg:table-cell" />
+                        <SortHeader label="Event ID" field="event_id" sort={sortField} order={order} onSort={onSort} />
+                        <SortHeader label="Action" field="event_action" sort={sortField} order={order} onSort={onSort} className="hidden md:table-cell" />
+                        <SortHeader label="Host" field="hostname" sort={sortField} order={order} onSort={onSort} />
+                        <SortHeader label="User" field="username" sort={sortField} order={order} onSort={onSort} className="hidden md:table-cell" />
+                        <SortHeader label="Source IP" field="source_ip" sort={sortField} order={order} onSort={onSort} className="hidden lg:table-cell" />
+                        <SortHeader label="Level" field="log_level" sort={sortField} order={order} onSort={onSort} className="hidden lg:table-cell" />
                         <th className={cn(tableCls.th, "hidden xl:table-cell")}>Message</th>
                       </>
                     )}

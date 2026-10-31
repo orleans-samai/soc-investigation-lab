@@ -11,6 +11,7 @@ from app.models.common import Page
 from app.models.events import EventFacets, NormalizedEvent
 from app.models.imports import ImportRecord, ImportReport, LogFormat
 from app.services import events as event_service
+from app.services import query as query_service
 from app.services.ingestion import ImportRejectedError, import_file
 
 router = APIRouter(tags=["events"])
@@ -58,14 +59,38 @@ def list_events(
     return event_service.paginate(event_service.sort_events(events, sort, order), page, page_size)
 
 
+@router.get("/events/query")
+def query_events(
+    lab: Lab,
+    q: Annotated[str, Query(max_length=query_service.MAX_QUERY_LENGTH)] = "",
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=500)] = 50,
+):
+    """Search with the Log Explorer query language (see app/services/query.py for the grammar)."""
+    try:
+        result = query_service.execute(query_service.parse(q), lab.store.events.sorted())
+    except query_service.QueryError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    if result.mode == "stats":
+        return {"mode": "stats", "columns": result.columns, "rows": result.rows, "total": len(result.rows), "scanned": result.scanned}
+    return {"mode": "events", "scanned": result.scanned, **event_service.paginate(result.events, page, page_size).model_dump(mode="json")}
+
+
 @router.get("/events/facets", response_model=EventFacets)
 def event_facets(lab: Lab):
     return event_service.facets(lab.store.events.sorted())
 
 
 @router.get("/events/export")
-def export_events(lab: Lab, flt: Filter, format: Literal["csv", "json"] = "csv"):
-    events = event_service.filter_events(lab.store.events.sorted(), flt)[-EXPORT_LIMIT:]
+def export_events(lab: Lab, flt: Filter, format: Literal["csv", "json"] = "csv", query: str | None = None):
+    if query:
+        try:
+            result = query_service.execute(query_service.parse(query), lab.store.events.sorted())
+        except query_service.QueryError as exc:
+            raise HTTPException(400, str(exc)) from exc
+        events = result.events[:EXPORT_LIMIT]
+    else:
+        events = event_service.filter_events(lab.store.events.sorted(), flt)[-EXPORT_LIMIT:]
     if format == "json":
         body, media = event_service.export_json(events), "application/json"
     else:

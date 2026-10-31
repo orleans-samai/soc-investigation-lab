@@ -237,6 +237,60 @@ MAPPINGS: dict[int, Mapping] = {
 }
 
 
+def _basename(path: str | None) -> str:
+    return (path or "?").replace("/", "\\").rsplit("\\", 1)[-1]
+
+
+# Sysmon (Microsoft-Windows-Sysmon/Operational) reuses small event ids, so it is selected by channel/provider.
+SYSMON_MAPPINGS: dict[int, Mapping] = {
+    1: Mapping(
+        EventSource.windows_sysmon,
+        EventType.process,
+        "process_created",
+        Outcome.success,
+        LogLevel.info,
+        lambda d, e: f"{e.username} started {_basename(e.process_name)} on {e.hostname} (parent {_basename(e.parent_process)})",
+    ),
+    3: Mapping(
+        EventSource.windows_sysmon,
+        EventType.network,
+        "network_connection",
+        Outcome.success,
+        LogLevel.info,
+        lambda d, e: (
+            f"{_basename(e.process_name)} on {e.hostname} connected to {e.fields.get('destination_hostname') or e.destination_ip}:{e.destination_port}"
+        ),
+    ),
+    10: Mapping(
+        EventSource.windows_sysmon,
+        EventType.process,
+        "process_access",
+        Outcome.success,
+        LogLevel.warning,
+        lambda d, e: (
+            f"{_basename(e.process_name)} opened {_basename(e.fields.get('target_image'))} on {e.hostname} (access {e.fields.get('granted_access')})"
+        ),
+    ),
+    11: Mapping(
+        EventSource.windows_sysmon,
+        EventType.file,
+        "file_created",
+        Outcome.success,
+        LogLevel.info,
+        lambda d, e: f"{_basename(e.process_name)} created {e.fields.get('target_filename')} on {e.hostname}",
+    ),
+    22: Mapping(
+        EventSource.windows_sysmon,
+        EventType.network,
+        "dns_query",
+        Outcome.success,
+        LogLevel.info,
+        lambda d, e: f"{_basename(e.process_name)} on {e.hostname} resolved {e.fields.get('query_name')}",
+    ),
+}
+_HASH = re.compile(r"(MD5|SHA1|SHA256|IMPHASH)=([0-9A-Fa-f]+)")
+
+
 def _first(record: dict[str, Any], *keys: str) -> Any:
     for key in keys:
         if key in record and record[key] not in (None, ""):
@@ -272,7 +326,9 @@ class WindowsJsonParser:
         event_id = _int(_first(record, "EventID", "EventId", "Id", "event_id"))
         if event_id is None:
             raise ParseError("missing EventID")
-        mapping = MAPPINGS.get(event_id)
+        origin = f"{record.get('Channel') or ''} {record.get('Provider') or ''}".lower()
+        sysmon = "sysmon" in origin
+        mapping = SYSMON_MAPPINGS.get(event_id) if sysmon else MAPPINGS.get(event_id)
         if mapping is None:
             return None  # Valid Windows record, but not an event the lab models: counted as skipped.
 
@@ -291,8 +347,31 @@ class WindowsJsonParser:
         source_port = _int(data.get("IpPort"))
         logon_type = _int(data.get("LogonType"))
         process = command = parent = None
+        destination_ip = destination_port = None
 
-        if event_id in (4624, 4625, 4634, 4672):
+        if sysmon:
+            username, domain = _split_account(data.get("User") or data.get("SourceUser") or _first(record, "UserId", "User"))
+            process = _clean(data.get("Image") or data.get("SourceImage"))
+            for algo, digest in _HASH.findall(str(data.get("Hashes") or "")):
+                fields[algo.lower()] = digest.lower()
+            if event_id == 1:
+                command = _clean(data.get("CommandLine"))
+                parent = _clean(data.get("ParentImage"))
+            elif event_id == 3:
+                source_ip, source_port = _ip(data.get("SourceIp")), _int(data.get("SourcePort"))
+                destination_ip, destination_port = _ip(data.get("DestinationIp")), _int(data.get("DestinationPort"))
+                fields["destination_hostname"] = _clean(data.get("DestinationHostname"))
+                fields["protocol"] = _clean(data.get("Protocol"))
+            elif event_id == 10:
+                fields["target_image"] = _clean(data.get("TargetImage"))
+                fields["granted_access"] = _clean(data.get("GrantedAccess"))
+                fields["call_trace"] = _clean(data.get("CallTrace"))
+            elif event_id == 11:
+                fields["target_filename"] = _clean(data.get("TargetFilename"))
+            elif event_id == 22:
+                fields["query_name"] = _clean(data.get("QueryName"))
+                fields["query_results"] = _clean(data.get("QueryResults"))
+        elif event_id in (4624, 4625, 4634, 4672):
             username, domain = _clean(data.get("TargetUserName")), _clean(data.get("TargetDomainName"))
             if event_id == 4672:
                 username, domain = _clean(data.get("SubjectUserName")), _clean(data.get("SubjectDomainName"))
@@ -353,6 +432,8 @@ class WindowsJsonParser:
             domain=domain.lower() if domain else None,
             source_ip=source_ip,
             source_port=source_port,
+            destination_ip=destination_ip,
+            destination_port=destination_port,
             logon_type=logon_type,
             process_name=process,
             command_line=command,

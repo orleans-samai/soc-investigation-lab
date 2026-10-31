@@ -1,6 +1,6 @@
 "use client";
 
-import { FlaskConical, Play, RotateCw, Save } from "lucide-react";
+import { Download, FlaskConical, Play, RotateCw, Save } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 import { toast } from "sonner";
@@ -9,13 +9,15 @@ import useSWR from "swr";
 import { SeverityBadge, Tag } from "@/components/soc/badges";
 import { CodeBlock, MitreChip, PageHeader, Term } from "@/components/soc/common";
 import { Button } from "@/components/ui/button";
-import { Input, Label, Panel, PanelHeader, Skeleton, Switch } from "@/components/ui/primitives";
+import { Input, Label, Panel, PanelHeader, Skeleton, Switch, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/primitives";
 import { patch, post } from "@/lib/api";
 import type { BacktestResult, RuleInfo } from "@/lib/types";
 import { useUrlState } from "@/lib/use-url-state";
-import { cn, formatTs, humanize, nf, relative } from "@/lib/utils";
+import { cn, downloadText, formatTs, humanize, nf, relative } from "@/lib/utils";
 
 function RuleDetail({ rule, onChanged }: { rule: RuleInfo; onChanged: () => void }) {
+  // Keyed by the tuned params so the Sigma export refreshes after "Save & re-run".
+  const { data: sigma } = useSWR<string>(`/rules/${rule.id}/sigma?v=${rule.params.map((p) => p.value).join("-")}`);
   const [params, setParams] = React.useState<Record<string, number>>({});
   const [backtest, setBacktest] = React.useState<BacktestResult | null>(null);
   const [busy, setBusy] = React.useState<string | null>(null);
@@ -74,8 +76,27 @@ function RuleDetail({ rule, onChanged }: { rule: RuleInfo; onChanged: () => void
         <p className="text-[13px] leading-relaxed text-muted">{rule.description}</p>
 
         <section>
-          <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-subtle">Logic</h3>
-          <CodeBlock>{rule.logic}</CodeBlock>
+          <Tabs defaultValue="logic">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <TabsList className="border-0 px-0">
+                <TabsTrigger value="logic">Engine logic</TabsTrigger>
+                <TabsTrigger value="sigma">Sigma rule</TabsTrigger>
+              </TabsList>
+              <Button size="sm" variant="ghost" disabled={!sigma} onClick={() => sigma && downloadText(`${rule.id}.yml`, sigma, "application/yaml")}>
+                <Download /> .yml
+              </Button>
+            </div>
+            <TabsContent value="logic">
+              <CodeBlock>{rule.logic}</CodeBlock>
+            </TabsContent>
+            <TabsContent value="sigma">
+              {sigma ? <CodeBlock>{sigma}</CodeBlock> : <Skeleton className="h-40 w-full" />}
+              <p className="mt-1.5 text-[11px] text-subtle">
+                Portable Sigma YAML with the current parameters. Thresholds are exported as Sigma v2 correlation rules; convert with pySigma / sigma-cli to
+                Splunk, Elastic, Sentinel and other SIEMs.
+              </p>
+            </TabsContent>
+          </Tabs>
         </section>
 
         {rule.params.length > 0 && (
@@ -198,6 +219,12 @@ function Rules() {
         title="Detection Rules"
         description="The Python detection engine evaluates these rules over normalized events. Each rule is unit-tested, mapped to MITRE ATT&CK and documents its false positives and response steps."
         actions={
+          <>
+          <Button asChild>
+            <a href="/api/rules/sigma.yml" download>
+              <Download /> Export all as Sigma
+            </a>
+          </Button>
           <Button
             loading={rerunning}
             onClick={async () => {
@@ -215,6 +242,7 @@ function Rules() {
           >
             <RotateCw /> Re-run detection
           </Button>
+          </>
         }
       />
       <div className="grid gap-4 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">

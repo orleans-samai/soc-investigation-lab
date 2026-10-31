@@ -1,0 +1,55 @@
+[
+  {
+    "EventID": 1,
+    "TimeCreated": "2026-10-29T16:02:10.0000000Z",
+    "Computer": "APP-01.corp.lab",
+    "Channel": "Microsoft-Windows-Sysmon/Operational",
+    "Provider": "Microsoft-Windows-Sysmon",
+    "EventData": {
+      "Image": "C:\\ProgramData\\m64.exe",
+      "CommandLine": "m64.exe \"privilege::debug\" \"sekurlsa::logonpasswords\" exit",
+      "ParentImage": "C:\\Windows\\System32\\cmd.exe",
+      "User": "CORP\u0007dm.roliveira",
+      "Hashes": "SHA256=6A1F0C2B9D8E7F6A5B4C3D2E1F0A9B8C7D6E5F4A3B2C1D0E9F8A7B6C5D4E3F2A"
+    }
+  },
+  {
+    "EventID": 10,
+    "TimeCreated": "2026-10-29T16:02:11.0000000Z",
+    "Computer": "APP-01.corp.lab",
+    "Channel": "Microsoft-Windows-Sysmon/Operational",
+    "Provider": "Microsoft-Windows-Sysmon",
+    "EventData": {
+      "SourceImage": "C:\\ProgramData\\m64.exe",
+      "TargetImage": "C:\\Windows\\system32\\lsass.exe",
+      "GrantedAccess": "0x1010",
+      "SourceUser": "CORP\u0007dm.roliveira"
+    }
+  },
+  {
+    "EventID": 10,
+    "TimeCreated": "2026-10-29T16:03:00.0000000Z",
+    "Computer": "APP-01.corp.lab",
+    "Channel": "Microsoft-Windows-Sysmon/Operational",
+    "Provider": "Microsoft-Windows-Sysmon",
+    "EventData": {
+      "SourceImage": "C:\\ProgramData\\Microsoft\\Windows Defender\\Platform\\MsMpEng.exe",
+      "TargetImage": "C:\\Windows\\system32\\lsass.exe",
+      "GrantedAccess": "0x1410",
+      "SourceUser": "NT AUTHORITY\\SYSTEM"
+    }
+  },
+  {
+    "EventID": 22,
+    "TimeCreated": "2026-10-29T16:04:30.0000000Z",
+    "Computer": "APP-01.corp.lab",
+    "Channel": "Microsoft-Windows-Sysmon/Operational",
+    "Provider": "Microsoft-Windows-Sysmon",
+    "EventData": {
+      "Image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "QueryName": "invoice-portal-secure.example",
+      "QueryResults": "203.0.113.12;",
+      "User": "CORP\u0007dm.roliveira"
+    }
+  }
+]

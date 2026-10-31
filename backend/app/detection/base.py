@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from app.detection.inventory import Inventory
+from app.detection.threat_intel import ThreatIntelFeed
 from app.models.alerts import RuleParam
 from app.models.common import MitreRef, Severity
 from app.models.events import NormalizedEvent
@@ -33,6 +34,7 @@ class DetectionContext:
     inventory: Inventory
     timezone: ZoneInfo
     business_hours: tuple[int, int] = (7, 20)
+    threat_intel: ThreatIntelFeed | None = None
 
     def local(self, at: datetime) -> datetime:
         return at.astimezone(self.timezone)

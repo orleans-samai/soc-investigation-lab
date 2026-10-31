@@ -5,15 +5,21 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import useSWR, { useSWRConfig } from "swr";
 
-import { Tag } from "@/components/soc/badges";
+import { SeverityBadge, Tag } from "@/components/soc/badges";
 import { KeyValue, PageHeader, tableCls } from "@/components/soc/common";
 import { EntityLink } from "@/components/soc/investigation-context";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/overlays";
 import { Panel, PanelHeader, Skeleton } from "@/components/ui/primitives";
 import { post } from "@/lib/api";
-import type { Asset, Identity, SystemStatus } from "@/lib/types";
+import type { Asset, Identity, Severity, SystemStatus } from "@/lib/types";
 import { cn, formatTs, nf } from "@/lib/utils";
+
+interface ThreatIntel {
+  source: string;
+  updated: string | null;
+  indicators: { type: string; value: string; threat: string; severity: Severity; confidence: number; alerts: number }[];
+}
 
 interface Inventory {
   organization: string;
@@ -30,6 +36,7 @@ export default function SettingsPage() {
   const { mutate: globalMutate } = useSWRConfig();
   const { data: status, mutate } = useSWR<SystemStatus>("/system/status");
   const { data: inv } = useSWR<Inventory>("/system/inventory");
+  const { data: intel } = useSWR<ThreatIntel>("/threat-intel");
 
   async function reset() {
     try {
@@ -164,6 +171,41 @@ export default function SettingsPage() {
                         <Tag>{i.type}</Tag>
                       </td>
                       <td className={tableCls.td}>{i.privileged ? <Tag className="text-high">yes</Tag> : <span className="text-xs text-subtle">no</span>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Panel>
+          <Panel className="overflow-hidden">
+            <PanelHeader title="Threat intelligence feed" description={intel ? `${intel.source}${intel.updated ? ` · updated ${intel.updated}` : ""} · used by rule LAB-016` : ""} />
+            <div className="overflow-x-auto">
+              <table className={tableCls.table}>
+                <thead className={tableCls.head}>
+                  <tr>
+                    <th className={tableCls.th}>Type</th>
+                    <th className={tableCls.th}>Indicator</th>
+                    <th className={cn(tableCls.th, "hidden md:table-cell")}>Threat</th>
+                    <th className={tableCls.th}>Severity</th>
+                    <th className={cn(tableCls.th, "text-right")}>Confidence</th>
+                    <th className={cn(tableCls.th, "text-right")}>Alerts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {intel?.indicators.map((i) => (
+                    <tr key={i.type + i.value} className={tableCls.row}>
+                      <td className={tableCls.td}>
+                        <Tag>{i.type}</Tag>
+                      </td>
+                      <td className={cn(tableCls.td, "max-w-[220px] truncate font-mono text-xs")} title={i.value}>
+                        {i.type === "ip" ? <EntityLink kind="ip" value={i.value} plain /> : i.value}
+                      </td>
+                      <td className={cn(tableCls.td, "hidden text-xs text-muted md:table-cell")}>{i.threat}</td>
+                      <td className={tableCls.td}>
+                        <SeverityBadge severity={i.severity} />
+                      </td>
+                      <td className={cn(tableCls.td, "text-right font-mono text-xs")}>{i.confidence}%</td>
+                      <td className={cn(tableCls.td, "text-right font-mono text-xs", i.alerts > 0 ? "text-high" : "text-subtle")}>{i.alerts}</td>
                     </tr>
                   ))}
                 </tbody>

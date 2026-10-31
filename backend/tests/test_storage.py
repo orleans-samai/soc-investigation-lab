@@ -37,3 +37,56 @@ def test_invalid_records_are_skipped(tmp_path):
     path.write_text(json.dumps({"items": [{"id": "ok", "actor": "a", "action": "x", "message": "m"}, {"id": "broken"}]}))
     loaded = JsonCollectionFile(path, "activity").load(Activity)
     assert [a.id for a in loaded.items] == ["ok"] and loaded.skipped == 1
+
+
+def test_sqlite_writes_only_changed_rows(tmp_path, monkeypatch):
+    from app.models.incidents import Activity
+    from app.storage.repository import LabStore
+
+    store = LabStore(tmp_path, "sqlite")
+    store.load()
+    for i in range(3):
+        store.activity.upsert(Activity(id=f"a{i}", actor="x", action="y", message=f"m{i}"))
+    store.persist_all()
+
+    written: list[int] = []
+    original = store._backend.db.save
+    monkeypatch.setattr(store._backend.db, "save", lambda c, up, rm, meta: (written.append(len(up) + len(rm)), original(c, up, rm, meta)))
+    store.activity.get("a1").message = "edited in place"  # services mutate objects directly
+    store.activity.remove("a2")
+    store.persist_all()
+    assert written == [2]  # one update + one delete; untouched collections and rows are skipped
+
+    reloaded = LabStore(tmp_path, "sqlite")
+    reloaded.load()
+    assert sorted(a.message for a in reloaded.activity.all()) == ["edited in place", "m0"]
+    store.close()
+    reloaded.close()
+
+
+def test_corrupt_database_is_quarantined(tmp_path):
+    from app.storage.repository import LabStore
+
+    (tmp_path / "lab.db").write_bytes(b"this is not sqlite" * 100)
+    store = LabStore(tmp_path, "sqlite")
+    store.load()
+    assert store.recovered_collections == ["database"] and len(store.events) == 0
+    assert any(p.name.startswith("lab.corrupt-") for p in tmp_path.iterdir())
+    store.close()
+
+
+def test_json_state_is_migrated_to_sqlite(tmp_path):
+    from app.models.incidents import Activity
+    from app.storage.repository import LabStore
+
+    legacy = LabStore(tmp_path, "json")
+    legacy.load()
+    legacy.activity.upsert(Activity(id="old", actor="x", action="y", message="from json"))
+    legacy.events.meta["initialized"] = True
+    legacy.persist_all()
+
+    store = LabStore(tmp_path, "sqlite")
+    store.load()
+    assert store.migrated_from_json and store.is_initialized() and store.activity.get("old").message == "from json"
+    assert (tmp_path / "json-backup" / "activity.json").exists() and not (tmp_path / "activity.json").exists()
+    store.close()

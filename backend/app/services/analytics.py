@@ -176,6 +176,14 @@ def metrics(lab: LabService) -> dict[str, Any]:
     closed = [i for i in incidents if i.closed_at]
 
     per_day: dict[str, Counter[str]] = defaultdict(Counter)
+    events = lab.store.events.sorted()
+    if events:
+        # One bar per day of telemetry, including quiet days, so gaps are visible instead of collapsed.
+        day = events[0].timestamp.astimezone(lab.timezone).date()
+        last = events[-1].timestamp.astimezone(lab.timezone).date()
+        while day <= last:
+            per_day[day.isoformat()] = Counter()
+            day += timedelta(days=1)
     for a in alerts:
         per_day[a.timestamp.astimezone(lab.timezone).date().isoformat()][a.severity.value] += 1
 
@@ -220,6 +228,10 @@ def metrics(lab: LabService) -> dict[str, Any]:
             "scenarios_total": len(per_scenario),
             "scenarios_fully_detected": sum(1 for s in executed if s["detected_runs"] == s["runs"]),
             "per_scenario": per_scenario,
+            "challenges_completed": len(graded := [r.challenge for r in runs if r.challenge.submitted_at]),
+            "challenge_average_pct": round(100 * sum(a.score for a in graded) / sum(a.max_score for a in graded), 1)
+            if graded and sum(a.max_score for a in graded)
+            else None,
         },
         "mitre": {
             "techniques_covered": len(techniques),

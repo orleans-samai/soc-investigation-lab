@@ -6,9 +6,22 @@
   "category": "Lateral Movement",
   "level": "N2",
   "expected_severity": "high",
-  "expected_rules": ["LAB-013", "LAB-012"],
-  "mitre": ["T1021.002", "T1543.003", "T1569.002"],
-  "hosts": ["ws-dev-03", "fs-01", "app-01", "ws-hr-02", "ws-fin-01"],
+  "expected_rules": [
+    "LAB-013",
+    "LAB-012"
+  ],
+  "mitre": [
+    "T1021.002",
+    "T1543.003",
+    "T1569.002"
+  ],
+  "hosts": [
+    "ws-dev-03",
+    "fs-01",
+    "app-01",
+    "ws-hr-02",
+    "ws-fin-01"
+  ],
   "learning_objectives": [
     "Spot one account authenticating to many hosts in a short window.",
     "Correlate remote logons with a service installation on one of the targets.",
@@ -21,33 +34,122 @@
     "Which hosts must be isolated first?"
   ],
   "variables": {
-    "service": ["WinSvcHelper", "UpdateOrchestratorSvc", "RemComSvc"]
+    "service": [
+      "WinSvcHelper",
+      "UpdateOrchestratorSvc",
+      "RemComSvc"
+    ]
   },
   "steps": [
     {
       "format": "windows_json",
       "offset_seconds": 0,
       "repeat": 4,
-      "interval_seconds": [45, 80],
-      "cycle": {"host": ["FS-01", "APP-01", "WS-HR-02", "WS-FIN-01"]},
-      "random_int": {"port": [49152, 65535]},
+      "interval_seconds": [
+        45,
+        80
+      ],
+      "cycle": {
+        "host": [
+          "FS-01",
+          "APP-01",
+          "WS-HR-02",
+          "WS-FIN-01"
+        ]
+      },
+      "random_int": {
+        "port": [
+          49152,
+          65535
+        ]
+      },
       "record": {
-        "EventID": 4624, "TimeCreated": "{ts}", "Computer": "{host}.corp.lab", "Channel": "Security",
-        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
-        "EventData": {"TargetUserName": "a.costa", "TargetDomainName": "CORP", "LogonType": "3",
-                      "IpAddress": "10.10.10.23", "IpPort": "{port}", "WorkstationName": "WS-DEV-03",
-                      "AuthenticationPackageName": "NTLM"}
+        "EventID": 4624,
+        "TimeCreated": "{ts}",
+        "Computer": "{host}.corp.lab",
+        "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing",
+        "Level": "Information",
+        "EventData": {
+          "TargetUserName": "a.costa",
+          "TargetDomainName": "CORP",
+          "LogonType": "3",
+          "IpAddress": "10.10.10.23",
+          "IpPort": "{port}",
+          "WorkstationName": "WS-DEV-03",
+          "AuthenticationPackageName": "NTLM"
+        }
       }
     },
     {
       "format": "windows_json",
       "offset_seconds": 70,
       "record": {
-        "EventID": 7045, "TimeCreated": "{ts}", "Computer": "APP-01.corp.lab", "Channel": "System",
-        "Provider": "Service Control Manager", "Level": "Information", "UserId": "CORP\\a.costa",
-        "EventData": {"ServiceName": "{service}", "ImagePath": "%SystemRoot%\\Temp\\{service}.exe -accepteula",
-                      "ServiceType": "user mode service", "StartType": "demand start", "AccountName": "LocalSystem"}
+        "EventID": 7045,
+        "TimeCreated": "{ts}",
+        "Computer": "APP-01.corp.lab",
+        "Channel": "System",
+        "Provider": "Service Control Manager",
+        "Level": "Information",
+        "UserId": "CORP\\a.costa",
+        "EventData": {
+          "ServiceName": "{service}",
+          "ImagePath": "%SystemRoot%\\Temp\\{service}.exe -accepteula",
+          "ServiceType": "user mode service",
+          "StartType": "demand start",
+          "AccountName": "LocalSystem"
+        }
       }
+    }
+  ],
+  "challenge": [
+    {
+      "id": "source",
+      "question": "From which host did the lateral movement start?",
+      "kind": "text",
+      "answers": [
+        "ws-dev-03",
+        "10.10.10.23"
+      ],
+      "hint": "Every 4624 logon carries the same IpAddress / WorkstationName.",
+      "explanation": "All network logons came from ws-dev-03 (10.10.10.23), the compromised developer's workstation."
+    },
+    {
+      "id": "host_count",
+      "question": "How many distinct hosts did the account log on to?",
+      "kind": "text",
+      "answers": [
+        "4",
+        "four"
+      ],
+      "hint": "LAB-013 evidence lists the destination hosts.",
+      "explanation": "fs-01, app-01, ws-hr-02 and ws-fin-01 within a few minutes, far outside a developer's normal pattern."
+    },
+    {
+      "id": "logon_type",
+      "question": "Which Windows logon type was used for those logons?",
+      "kind": "choice",
+      "answers": [
+        "3 - Network"
+      ],
+      "hint": "Check the logon_type field of the 4624 events.",
+      "explanation": "Logon type 3 (network/SMB) is what remote execution tools such as PsExec use.",
+      "options": [
+        "2 - Interactive",
+        "3 - Network",
+        "5 - Service",
+        "10 - RemoteInteractive"
+      ]
+    },
+    {
+      "id": "service",
+      "question": "What is the name of the service installed on app-01?",
+      "kind": "text",
+      "answers": [
+        "{service}"
+      ],
+      "hint": "Event 7045 on app-01, field ServiceName.",
+      "explanation": "{service} runs a binary from C:\\Windows\\Temp as LocalSystem: remote service execution (T1569.002)."
     }
   ]
 }

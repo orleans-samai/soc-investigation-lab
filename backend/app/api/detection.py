@@ -5,11 +5,14 @@ from __future__ import annotations
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import PlainTextResponse
 
 from app.api.deps import Lab, require_alert
+from app.detection import sigma
 from app.models.alerts import Alert, AlertStatus, AlertUpdate, BacktestRequest, BacktestResult, RuleInfo, RuleUpdate
 from app.models.common import Page, Severity, utcnow
-from app.models.simulations import ScenarioSummary, SimulationRequest, SimulationRun
+from app.models.simulations import ChallengeSubmission, HintRequest, ScenarioSummary, SimulationRequest, SimulationRun
+from app.services import challenge
 from app.services.events import paginate
 from app.services.ingestion import run_simulation
 from app.simulation.scenarios import ScenarioError, estimate_events
@@ -145,6 +148,28 @@ def list_rules(lab: Lab):
     return [_rule_info(lab, r) for r in lab.engine.rules]
 
 
+def _sigma_docs(lab, rule) -> list[dict]:
+    params = rule.resolve_params(lab.rule_override(rule.id).params)
+    return sigma.rule_documents(rule, params, lab.context.threat_intel)
+
+
+@router.get("/rules/sigma.yml", response_class=PlainTextResponse)
+def export_sigma(lab: Lab):
+    """Every rule as Sigma YAML (multi-document), using the current tuned parameters."""
+    docs = [doc for rule in lab.engine.rules for doc in _sigma_docs(lab, rule)]
+    body = sigma.to_yaml(docs, "SOC Investigation Lab - detection rules exported as Sigma (https://sigmahq.io)")
+    return PlainTextResponse(
+        body, media_type="application/yaml", headers={"Content-Disposition": 'attachment; filename="soc-lab-sigma-rules.yml"'}
+    )
+
+
+@router.get("/rules/{rule_id}/sigma", response_class=PlainTextResponse)
+def rule_sigma(lab: Lab, rule_id: str):
+    rule = _require_rule(lab, rule_id)
+    body = sigma.to_yaml(_sigma_docs(lab, rule), f"{rule.id} {rule.name}")
+    return PlainTextResponse(body, media_type="application/yaml", headers={"Content-Disposition": f'inline; filename="{rule.id}.yml"'})
+
+
 @router.get("/rules/{rule_id}", response_model=RuleInfo)
 def get_rule(lab: Lab, rule_id: str):
     return _rule_info(lab, _require_rule(lab, rule_id))
@@ -209,8 +234,11 @@ def list_scenarios(lab: Lab):
         mine = [r for r in runs if r.scenario_id == s.id]
         summaries.append(
             ScenarioSummary(
-                **s.model_dump(include=set(ScenarioSummary.model_fields) - {"event_estimate", "run_count", "last_run_id"}),
+                **s.model_dump(
+                    include=set(ScenarioSummary.model_fields) - {"event_estimate", "challenge_points", "run_count", "last_run_id"}
+                ),
                 event_estimate=estimate_events(s),
+                challenge_points=sum(q.points for q in s.challenge),
                 run_count=len(mine),
                 last_run_id=mine[-1].id if mine else None,
             )
@@ -240,6 +268,39 @@ def get_run(lab: Lab, run_id: str):
     if run is None:
         raise HTTPException(404, f"simulation run {run_id} not found")
     return _run_detail(lab, run)
+
+
+def _require_run(lab, run_id: str) -> SimulationRun:
+    run = lab.store.simulation_runs.get(run_id)
+    if run is None:
+        raise HTTPException(404, f"simulation run {run_id} not found")
+    if run.scenario_id not in lab.scenarios:
+        raise HTTPException(404, f"scenario {run.scenario_id} no longer exists")
+    return run
+
+
+@router.get("/simulations/runs/{run_id}/challenge")
+def get_challenge(lab: Lab, run_id: str):
+    run = _require_run(lab, run_id)
+    return challenge.view(lab.scenarios[run.scenario_id], run)
+
+
+@router.post("/simulations/runs/{run_id}/challenge/hint")
+def challenge_hint(lab: Lab, run_id: str, body: HintRequest):
+    run = _require_run(lab, run_id)
+    try:
+        return challenge.use_hint(lab, lab.scenarios[run.scenario_id], run, body.question_id)
+    except challenge.ChallengeError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@router.post("/simulations/runs/{run_id}/challenge")
+def submit_challenge(lab: Lab, run_id: str, body: ChallengeSubmission):
+    run = _require_run(lab, run_id)
+    try:
+        return challenge.submit(lab, lab.scenarios[run.scenario_id], run, body.answers)
+    except challenge.ChallengeError as exc:
+        raise HTTPException(409, str(exc)) from exc
 
 
 def _run_detail(lab, run: SimulationRun) -> dict:

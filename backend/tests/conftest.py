@@ -13,6 +13,7 @@ from app.config import Settings
 from app.detection.base import DetectionContext
 from app.detection.engine import DetectionEngine
 from app.detection.inventory import Inventory
+from app.detection.threat_intel import ThreatIntelFeed
 from app.main import create_app
 from app.models.events import EventSource, EventType, NormalizedEvent, Outcome
 
@@ -27,7 +28,8 @@ def inventory() -> Inventory:
 
 @pytest.fixture
 def engine(inventory: Inventory) -> DetectionEngine:
-    return DetectionEngine(DetectionContext(inventory=inventory, timezone=ZoneInfo("America/Sao_Paulo")))
+    feed = ThreatIntelFeed.load(BACKEND / "data" / "threat_intel.json")
+    return DetectionEngine(DetectionContext(inventory=inventory, timezone=ZoneInfo("America/Sao_Paulo"), threat_intel=feed))
 
 
 @pytest.fixture

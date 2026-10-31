@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, CheckCircle2, FileText, Globe2, Lock, Monitor, Play, RotateCcw, ShieldAlert, User } from "lucide-react";
+import { ArrowLeft, CheckCircle2, FileText, Globe2, Lock, Monitor, Pencil, Play, RotateCcw, ShieldAlert, User } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import * as React from "react";
@@ -165,13 +165,14 @@ function IncidentPage() {
   const [note, setNote] = React.useState("");
   const [author, setAuthor] = React.useState("analyst");
   const [busy, setBusy] = React.useState(false);
+  const [titleDraft, setTitleDraft] = React.useState<string | null>(null);
 
   if (!id) return <ErrorState error={new Error("No record id in the URL.")} />;
   if (error) return <ErrorState error={error} retry={() => mutate()} />;
   if (!data) return <Skeleton className="h-[70vh] w-full" />;
   const { incident, alerts, events, activity, playbook } = data;
 
-  async function update(body: Partial<{ status: IncidentStatus; severity: Severity; assignee: string }>, message: string) {
+  async function update(body: Partial<{ status: IncidentStatus; severity: Severity; assignee: string; title: string }>, message: string) {
     setBusy(true);
     try {
       await patch(`/incidents/${incident.id}`, body);
@@ -217,7 +218,31 @@ function IncidentPage() {
             <StatusBadge status={incident.status} />
             <ClassificationText value={incident.classification} />
           </div>
-          <h1 className="mt-2 text-xl font-semibold tracking-tight">{incident.title}</h1>
+          {titleDraft === null ? (
+            <div className="group mt-2 flex items-start gap-1.5">
+              <h1 className="text-xl font-semibold tracking-tight">{incident.title}</h1>
+              <Button variant="ghost" size="icon-sm" className="opacity-60 group-hover:opacity-100" aria-label="Edit title" onClick={() => setTitleDraft(incident.title)}>
+                <Pencil />
+              </Button>
+            </div>
+          ) : (
+            <form
+              className="mt-2 flex max-w-3xl items-center gap-2"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                await update({ title: titleDraft.trim() }, "Title updated");
+                setTitleDraft(null);
+              }}
+            >
+              <Input autoFocus value={titleDraft} onChange={(e) => setTitleDraft(e.target.value)} minLength={3} maxLength={200} aria-label="Incident title" className="h-9 text-base font-semibold" onKeyDown={(e) => e.key === "Escape" && setTitleDraft(null)} />
+              <Button type="submit" variant="primary" disabled={titleDraft.trim().length < 3} loading={busy}>
+                Save
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => setTitleDraft(null)}>
+                Cancel
+              </Button>
+            </form>
+          )}
           <p className="mt-1 max-w-4xl text-[13px] leading-relaxed text-muted">{incident.summary}</p>
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">

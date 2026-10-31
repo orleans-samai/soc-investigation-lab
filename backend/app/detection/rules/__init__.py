@@ -10,6 +10,8 @@ from app.detection.rules.authentication import (
     WindowsBruteForce,
 )
 from app.detection.rules.endpoint import AuditLogCleared, ScheduledTaskCreated, ServiceInstalled, SuspiciousPowerShell
+from app.detection.rules.intel import ThreatIntelMatch
+from app.detection.rules.sysmon import LsassMemoryAccess, OfficeSpawnsShell
 
 
 def builtin_rules() -> list[Rule]:
@@ -28,5 +30,8 @@ def builtin_rules() -> list[Rule]:
         ServiceInstalled(),
         LateralMovement(),
         SudoAbuse(),
+        LsassMemoryAccess(),
+        ThreatIntelMatch(),
+        OfficeSpawnsShell(),
     ]
     return sorted(rules, key=lambda r: r.id)
