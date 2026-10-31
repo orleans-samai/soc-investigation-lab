@@ -1,0 +1,65 @@
+{
+  "id": "linux-backdoor-account",
+  "name": "Root login with stolen key and Linux backdoor account",
+  "summary": "A stolen root SSH key is used from a cloud VPS against the web server to create a hidden sudo-capable account.",
+  "narrative": "A private key that allowed root logins leaked from a developer laptop. An attacker connects directly as root to the public web server, creates a new local user with a system-like name and adds it to the sudo group to keep access even if the key is revoked.",
+  "category": "Persistence",
+  "level": "N2",
+  "expected_severity": "critical",
+  "expected_rules": ["LAB-006", "LAB-007", "LAB-008"],
+  "mitre": ["T1078.003", "T1136.001", "T1098"],
+  "hosts": ["web-01"],
+  "learning_objectives": [
+    "Recognise the risk of direct root SSH logins.",
+    "Track account creation and group changes in Linux auth logs.",
+    "List the hardening steps that would have prevented the intrusion."
+  ],
+  "investigation_questions": [
+    "Where did the root login come from and which authentication method was used?",
+    "Which account was created and which group was it added to?",
+    "How would you remove the persistence and what else would you check?",
+    "Which sshd configuration changes would prevent a repeat?"
+  ],
+  "variables": {
+    "attacker_ip": ["198.51.100.140", "198.51.100.177"],
+    "backdoor": ["sysbackup", "systemd-net", "postgres-adm"]
+  },
+  "steps": [
+    {
+      "format": "linux_ssh",
+      "offset_seconds": 0,
+      "random_int": {"pid": [40000, 49999], "port": [32768, 60999]},
+      "line": "{ts} web-01 sshd[{pid}]: Accepted publickey for root from {attacker_ip} port {port} ssh2: ED25519 SHA256:q3Vf9kB0yXo1mJm2l8nX4tO7dS0aR5pK6wE1zC2vB7g"
+    },
+    {
+      "format": "linux_ssh",
+      "offset_seconds": 1,
+      "random_int": {"pid": [40000, 49999]},
+      "line": "{ts} web-01 sshd[{pid}]: pam_unix(sshd:session): session opened for user root(uid=0) by (uid=0)"
+    },
+    {
+      "format": "linux_ssh",
+      "offset_seconds": 64,
+      "random_int": {"pid": [50000, 50999]},
+      "line": "{ts} web-01 groupadd[{pid}]: group added to /etc/group: name={backdoor}, GID=1003"
+    },
+    {
+      "format": "linux_ssh",
+      "offset_seconds": 64,
+      "random_int": {"pid": [50000, 50999]},
+      "line": "{ts} web-01 useradd[{pid}]: new user: name={backdoor}, UID=1003, GID=1003, home=/home/{backdoor}, shell=/bin/bash, from=/dev/pts/0"
+    },
+    {
+      "format": "linux_ssh",
+      "offset_seconds": 92,
+      "random_int": {"pid": [51000, 51999]},
+      "line": "{ts} web-01 usermod[{pid}]: add '{backdoor}' to group 'sudo'"
+    },
+    {
+      "format": "linux_ssh",
+      "offset_seconds": 400,
+      "random_int": {"pid": [40000, 49999], "port": [32768, 60999]},
+      "line": "{ts} web-01 sshd[{pid}]: Disconnected from user root {attacker_ip} port {port}"
+    }
+  ]
+}

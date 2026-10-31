@@ -1,0 +1,154 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------------------
+   Design tokens. Dark is the primary theme; light mirrors the same roles.
+   Severity colours are reserved for severity - never used decoratively.
+   --------------------------------------------------------------------------- */
+:root {
+  --background: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #f1f3f6;
+  --elevated: #ffffff;
+  --border: #e2e5eb;
+  --border-strong: #cdd2db;
+  --foreground: #10141b;
+  --muted: #586174;
+  --subtle: #8a92a2;
+  --primary: #2563eb;
+  --primary-hover: #1d4fd7;
+  --primary-foreground: #ffffff;
+  --ring: #2563eb;
+  --sev-critical: #d92d2d;
+  --sev-high: #e2680f;
+  --sev-medium: #b88700;
+  --sev-low: #64748b;
+  --success: #138a4a;
+  --chart-1: #2a78d6;
+  --chart-2: #e87ba4;
+  --chart-grid: #e8ebf0;
+  color-scheme: light;
+}
+
+.dark {
+  --background: #090b0f;
+  --surface: #0e1117;
+  --surface-2: #131821;
+  --elevated: #171c26;
+  --border: #1f2531;
+  --border-strong: #2c3443;
+  --foreground: #e5e8ee;
+  --muted: #98a1b3;
+  --subtle: #677085;
+  --primary: #4d8dff;
+  --primary-hover: #6aa0ff;
+  --primary-foreground: #ffffff;
+  --ring: #4d8dff;
+  --sev-critical: #f04a4a;
+  --sev-high: #f5893c;
+  --sev-medium: #e6bc34;
+  --sev-low: #8592ab;
+  --success: #3cc68a;
+  --chart-1: #3987e5;
+  --chart-2: #d55181;
+  --chart-grid: #1b212c;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-elevated: var(--elevated);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-ring: var(--ring);
+  --color-critical: var(--sev-critical);
+  --color-high: var(--sev-high);
+  --color-medium: var(--sev-medium);
+  --color-low: var(--sev-low);
+  --color-success: var(--success);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  --animate-in: fade-in 140ms ease-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html,
+  body {
+    background: var(--background);
+    color: var(--foreground);
+  }
+  body {
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--primary) 35%, transparent);
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 999px;
+    border: 3px solid var(--background);
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .print-surface {
+    border: none !important;
+    box-shadow: none !important;
+  }
+}

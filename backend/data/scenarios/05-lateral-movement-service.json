@@ -1,0 +1,53 @@
+{
+  "id": "lateral-movement-service",
+  "name": "Lateral movement with remote service execution",
+  "summary": "A compromised developer account fans out over SMB to several servers and workstations, then installs a service from a temp folder.",
+  "narrative": "Credentials of a developer were phished. From the developer's workstation the attacker authenticates over the network to the file server, ERP server and two workstations in quick succession, then creates a service whose binary lives in C:\\Windows\\Temp - the classic footprint of PsExec-like tools.",
+  "category": "Lateral Movement",
+  "level": "N2",
+  "expected_severity": "high",
+  "expected_rules": ["LAB-013", "LAB-012"],
+  "mitre": ["T1021.002", "T1543.003", "T1569.002"],
+  "hosts": ["ws-dev-03", "fs-01", "app-01", "ws-hr-02", "ws-fin-01"],
+  "learning_objectives": [
+    "Spot one account authenticating to many hosts in a short window.",
+    "Correlate remote logons with a service installation on one of the targets.",
+    "Prioritise containment when an attacker is moving laterally."
+  ],
+  "investigation_questions": [
+    "Which hosts were accessed and in what order?",
+    "Which source host was used - is it the user's own workstation?",
+    "What does the installed service execute and which account does it run as?",
+    "Which hosts must be isolated first?"
+  ],
+  "variables": {
+    "service": ["WinSvcHelper", "UpdateOrchestratorSvc", "RemComSvc"]
+  },
+  "steps": [
+    {
+      "format": "windows_json",
+      "offset_seconds": 0,
+      "repeat": 4,
+      "interval_seconds": [45, 80],
+      "cycle": {"host": ["FS-01", "APP-01", "WS-HR-02", "WS-FIN-01"]},
+      "random_int": {"port": [49152, 65535]},
+      "record": {
+        "EventID": 4624, "TimeCreated": "{ts}", "Computer": "{host}.corp.lab", "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
+        "EventData": {"TargetUserName": "a.costa", "TargetDomainName": "CORP", "LogonType": "3",
+                      "IpAddress": "10.10.10.23", "IpPort": "{port}", "WorkstationName": "WS-DEV-03",
+                      "AuthenticationPackageName": "NTLM"}
+      }
+    },
+    {
+      "format": "windows_json",
+      "offset_seconds": 70,
+      "record": {
+        "EventID": 7045, "TimeCreated": "{ts}", "Computer": "APP-01.corp.lab", "Channel": "System",
+        "Provider": "Service Control Manager", "Level": "Information", "UserId": "CORP\\a.costa",
+        "EventData": {"ServiceName": "{service}", "ImagePath": "%SystemRoot%\\Temp\\{service}.exe -accepteula",
+                      "ServiceType": "user mode service", "StartType": "demand start", "AccountName": "LocalSystem"}
+      }
+    }
+  ]
+}

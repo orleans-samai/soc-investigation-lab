@@ -1,0 +1,23 @@
+// Short explanations shown in tooltips next to technical terms (dotted underline in the UI).
+export const GLOSSARY: Record<string, string> = {
+  "MITRE ATT&CK": "A public knowledge base of adversary tactics (the 'why') and techniques (the 'how') observed in real intrusions.",
+  MTTD: "Mean Time To Detect: average delay between the first malicious event and the alert that flagged it.",
+  MTTA: "Mean Time To Acknowledge: average time from incident creation until an analyst starts working on it.",
+  MTTR: "Mean Time To Resolve: average time from incident creation until it is closed with a documented decision.",
+  Precision: "Of the alerts analysts decided on, the share that were true positives. Low precision means noisy rules.",
+  "False positive": "The detection fired, but the activity was not what the rule looks for (e.g. a misread pattern).",
+  "Benign true positive": "The rule worked as designed, but the activity was authorised (e.g. approved maintenance).",
+  "True positive": "The detection fired on real malicious or unauthorised activity.",
+  IOC: "Indicator of Compromise: an observable artefact (IP, URL, file, account) associated with malicious activity.",
+  "Logon type": "Windows logon category: 2 = interactive, 3 = network (SMB), 5 = service, 10 = RDP, 11 = cached.",
+  "Event ID": "Windows identifies event kinds by number, e.g. 4624 successful logon, 4625 failed logon, 4720 user created.",
+  "Raw log": "The record exactly as it was received, preserved untouched for evidence and re-parsing.",
+  "Normalized fields": "The lab's common schema: every source is mapped to the same field names so rules can work across sources.",
+  Correlation: "Grouping related alerts (same account, source IP or host in a time window) into a single incident.",
+  Backtest: "Run a rule with different parameters over historical events to see how many alerts it would generate.",
+  Threshold: "Alert only when an event count crosses a limit inside a time window - the main lever against noise.",
+  "Simulation clock": "The lab's notion of 'now': the timestamp of the most recent event. Ranges such as 'last 24h' are relative to it.",
+  "Fail-safe import": "Files are parsed line by line; invalid lines are reported and skipped, never executed.",
+  "Password spraying": "Trying a few common passwords against many accounts to stay under lockout thresholds.",
+  "Brute force": "Many password guesses against the same account or host in a short period.",
+};

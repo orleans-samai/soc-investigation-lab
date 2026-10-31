@@ -1,0 +1,57 @@
+{
+  "organization": "Lab Corp (fictional)",
+  "domain": "corp.lab",
+  "internal_networks": ["10.10.0.0/16"],
+  "privileged_groups": [
+    "Administrators",
+    "Domain Admins",
+    "Enterprise Admins",
+    "Schema Admins",
+    "Backup Operators",
+    "sudo",
+    "wheel"
+  ],
+  "assets": [
+    {"hostname": "dc-01", "ip": "10.10.1.10", "os": "Windows Server 2022", "role": "Domain Controller", "criticality": "critical", "owner": "IT Infrastructure", "tags": ["tier0"]},
+    {"hostname": "fs-01", "ip": "10.10.1.20", "os": "Windows Server 2022", "role": "File Server", "criticality": "high", "owner": "IT Infrastructure"},
+    {"hostname": "app-01", "ip": "10.10.1.30", "os": "Windows Server 2019", "role": "ERP Application Server", "criticality": "high", "owner": "IT Applications"},
+    {"hostname": "ws-fin-01", "ip": "10.10.10.21", "os": "Windows 11", "role": "Workstation (Finance)", "criticality": "medium", "owner": "j.silva"},
+    {"hostname": "ws-hr-02", "ip": "10.10.10.22", "os": "Windows 11", "role": "Workstation (HR)", "criticality": "medium", "owner": "m.santos"},
+    {"hostname": "ws-dev-03", "ip": "10.10.10.23", "os": "Windows 11", "role": "Workstation (Engineering)", "criticality": "medium", "owner": "a.costa"},
+    {"hostname": "ws-it-04", "ip": "10.10.10.24", "os": "Windows 11", "role": "Admin Workstation (IT)", "criticality": "high", "owner": "r.oliveira", "tags": ["paw"]},
+    {"hostname": "ws-sales-05", "ip": "10.10.10.25", "os": "Windows 11", "role": "Workstation (Sales)", "criticality": "low", "owner": "l.pereira"},
+    {"hostname": "ws-ops-06", "ip": "10.10.10.26", "os": "Windows 11", "role": "Workstation (Operations)", "criticality": "low", "owner": "c.souza"},
+    {"hostname": "bastion-01", "ip": "10.10.2.5", "public_ip": "192.0.2.10", "os": "Ubuntu 24.04 LTS", "role": "SSH Bastion (internet-facing)", "criticality": "high", "owner": "IT Infrastructure", "tags": ["internet-facing"]},
+    {"hostname": "web-01", "ip": "10.10.2.20", "public_ip": "192.0.2.20", "os": "Ubuntu 24.04 LTS", "role": "Public Web Server", "criticality": "high", "owner": "Engineering", "tags": ["internet-facing"]},
+    {"hostname": "db-01", "ip": "10.10.2.30", "os": "Debian 12", "role": "PostgreSQL Database", "criticality": "critical", "owner": "Engineering"},
+    {"hostname": "ci-01", "ip": "10.10.2.15", "os": "Ubuntu 24.04 LTS", "role": "CI/CD Runner", "criticality": "medium", "owner": "Engineering"}
+  ],
+  "identities": [
+    {"username": "j.silva", "display_name": "Juliana Silva", "department": "Finance", "title": "Financial Analyst", "type": "human", "workstation": "ws-fin-01"},
+    {"username": "m.santos", "display_name": "Marcos Santos", "department": "Human Resources", "title": "HR Specialist", "type": "human", "workstation": "ws-hr-02"},
+    {"username": "a.costa", "display_name": "Ana Costa", "department": "Engineering", "title": "Software Developer", "type": "human", "workstation": "ws-dev-03"},
+    {"username": "r.oliveira", "display_name": "Rafael Oliveira", "department": "IT", "title": "Systems Administrator", "type": "human", "workstation": "ws-it-04"},
+    {"username": "adm.roliveira", "display_name": "Rafael Oliveira (admin account)", "department": "IT", "title": "Systems Administrator", "type": "admin", "privileged": true, "workstation": "ws-it-04"},
+    {"username": "l.pereira", "display_name": "Lucas Pereira", "department": "Sales", "title": "Account Executive", "type": "human", "workstation": "ws-sales-05"},
+    {"username": "c.souza", "display_name": "Camila Souza", "department": "Operations", "title": "Operations Coordinator", "type": "human", "workstation": "ws-ops-06"},
+    {"username": "svc_backup", "display_name": "Backup service account", "department": "IT", "title": "Service account", "type": "service", "privileged": true},
+    {"username": "deploy", "display_name": "CI deploy account", "department": "Engineering", "title": "Service account", "type": "service"},
+    {"username": "administrator", "display_name": "Built-in Administrator", "department": "IT", "title": "Built-in account", "type": "builtin", "privileged": true},
+    {"username": "root", "display_name": "Linux root", "department": "IT", "title": "Built-in account", "type": "builtin", "privileged": true}
+  ],
+  "maintenance_windows": [
+    {
+      "id": "CHG-2041",
+      "description": "Monthly patching of domain controller and file server",
+      "usernames": ["adm.roliveira"],
+      "hosts": ["dc-01", "fs-01"],
+      "start": "2026-10-26T04:00:00Z",
+      "end": "2026-10-26T06:30:00Z"
+    }
+  ],
+  "geo": [
+    {"cidr": "203.0.113.0/24", "country": "NL (synthetic)", "city": "Amsterdam", "asn": "AS64500", "organization": "Example Bulletproof Hosting", "reputation": "malicious"},
+    {"cidr": "198.51.100.0/24", "country": "SG (synthetic)", "city": "Singapore", "asn": "AS64501", "organization": "Example Cloud VPS", "reputation": "suspicious"},
+    {"cidr": "192.0.2.0/24", "country": "BR (synthetic)", "city": "Sao Paulo", "asn": "AS64502", "organization": "Lab Corp public range", "reputation": "owned"}
+  ]
+}

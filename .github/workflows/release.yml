@@ -1,0 +1,79 @@
+name: Desktop release
+
+# Builds the installers on each OS (PyInstaller cannot cross-compile) and, for a version tag,
+# publishes them on a GitHub Release.  Tag with:  git tag v1.0.0 && git push origin v1.0.0
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install JavaScript dependencies
+        run: |
+          npm ci --prefix frontend --no-audit --no-fund
+          npm ci --prefix desktop --no-audit --no-fund
+      - name: Build installers
+        working-directory: desktop
+        env:
+          PYTHON: python
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: node build.mjs
+      - name: Smoke test bundled server (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          server=desktop/release/linux-unpacked/resources/server/soclab-server
+          "$server" --port 47400 --state-dir "$RUNNER_TEMP/state" --static-dir desktop/release/linux-unpacked/resources/web &
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:47400/api/health && break; sleep 1; done
+          curl -fsS http://127.0.0.1:47400/ | grep -q "SOC Investigation Lab"
+          kill %1
+      - name: Smoke test bundled server (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $res = "desktop/release/win-unpacked/resources"
+          $p = Start-Process "$res/server/soclab-server.exe" -ArgumentList "--port 47400 --state-dir $env:RUNNER_TEMP\state --static-dir $res/web" -PassThru
+          $ok = $false
+          for ($i = 0; $i -lt 30 -and -not $ok; $i++) { Start-Sleep 1; try { $ok = (Invoke-WebRequest -UseBasicParsing http://127.0.0.1:47400/api/health).StatusCode -eq 200 } catch {} }
+          Stop-Process $p -Force
+          if (-not $ok) { throw "bundled server did not start" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installers-${{ runner.os }}
+          path: |
+            desktop/release/*.exe
+            desktop/release/*.AppImage
+            desktop/release/*.deb
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: installers
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: installers/*
+          generate_release_notes: true

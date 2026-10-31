@@ -1,0 +1,57 @@
+{
+  "id": "ssh-bruteforce-compromise",
+  "name": "SSH brute force leading to account compromise",
+  "summary": "An internet host hammers the SSH bastion, guesses the password of a service account and tries to escalate with sudo.",
+  "narrative": "The bastion host is exposed to the internet for administrators. A host from a hosting provider with poor reputation starts guessing passwords for common accounts. After a few minutes one attempt against the 'deploy' service account succeeds and the attacker immediately checks for sudo rights.",
+  "category": "Credential Access",
+  "level": "N1",
+  "expected_severity": "critical",
+  "expected_rules": ["LAB-001", "LAB-004", "LAB-014"],
+  "mitre": ["T1110.001", "T1078", "T1548.003"],
+  "hosts": ["bastion-01"],
+  "learning_objectives": [
+    "Read raw sshd lines and recognise a password-guessing pattern.",
+    "Correlate failed and successful logons from the same source.",
+    "Decide when a brute force becomes a confirmed compromise."
+  ],
+  "investigation_questions": [
+    "Which source IP generated the attempts and what is its reputation?",
+    "Which account was compromised and how long did the attack last before success?",
+    "What did the attacker try to do after logging in?",
+    "Which containment actions would you take first?"
+  ],
+  "variables": {
+    "attacker_ip": ["203.0.113.45", "203.0.113.77", "203.0.113.102", "203.0.113.150"]
+  },
+  "steps": [
+    {
+      "format": "linux_ssh",
+      "offset_seconds": 0,
+      "repeat": 22,
+      "interval_seconds": [2, 7],
+      "cycle": {"who": ["root", "invalid user admin", "root", "deploy", "root", "invalid user test", "deploy", "root"]},
+      "random_int": {"pid": [20000, 29999], "port": [32768, 60999]},
+      "line": "{ts} bastion-01 sshd[{pid}]: Failed password for {who} from {attacker_ip} port {port} ssh2"
+    },
+    {
+      "format": "linux_ssh",
+      "offset_seconds": 130,
+      "random_int": {"pid": [30000, 30999], "port": [32768, 60999]},
+      "line": "{ts} bastion-01 sshd[{pid}]: Accepted password for deploy from {attacker_ip} port {port} ssh2"
+    },
+    {
+      "format": "linux_ssh",
+      "offset_seconds": 131,
+      "random_int": {"pid": [30000, 30999]},
+      "line": "{ts} bastion-01 sshd[{pid}]: pam_unix(sshd:session): session opened for user deploy(uid=1002) by (uid=0)"
+    },
+    {
+      "format": "linux_ssh",
+      "offset_seconds": 175,
+      "repeat": 2,
+      "interval_seconds": [8, 20],
+      "cycle": {"cmd": ["/usr/bin/cat /etc/shadow", "/bin/bash"]},
+      "line": "{ts} bastion-01 sudo:   deploy : user NOT in sudoers ; TTY=pts/1 ; PWD=/home/deploy ; USER=root ; COMMAND={cmd}"
+    }
+  ]
+}

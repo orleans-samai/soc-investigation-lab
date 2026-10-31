@@ -1,0 +1,154 @@
+[
+  {
+    "EventID": 4625,
+    "TimeCreated": "2026-10-29T13:20:05.0000000Z",
+    "Computer": "FS-01.corp.lab",
+    "Channel": "Security",
+    "Provider": "Microsoft-Windows-Security-Auditing",
+    "Level": "Information",
+    "EventData": {
+      "TargetUserName": "m.santos",
+      "TargetDomainName": "CORP",
+      "LogonType": "3",
+      "IpAddress": "203.0.113.66",
+      "IpPort": "51000",
+      "WorkstationName": "DESKTOP-X1",
+      "Status": "0xc000006d",
+      "SubStatus": "0xc000006a"
+    }
+  },
+  {
+    "EventID": 4625,
+    "TimeCreated": "2026-10-29T13:20:14.0000000Z",
+    "Computer": "FS-01.corp.lab",
+    "Channel": "Security",
+    "Provider": "Microsoft-Windows-Security-Auditing",
+    "Level": "Information",
+    "EventData": {
+      "TargetUserName": "m.santos",
+      "TargetDomainName": "CORP",
+      "LogonType": "3",
+      "IpAddress": "203.0.113.66",
+      "IpPort": "51001",
+      "WorkstationName": "DESKTOP-X1",
+      "Status": "0xc000006d",
+      "SubStatus": "0xc000006a"
+    }
+  },
+  {
+    "EventID": 4625,
+    "TimeCreated": "2026-10-29T13:20:23.0000000Z",
+    "Computer": "FS-01.corp.lab",
+    "Channel": "Security",
+    "Provider": "Microsoft-Windows-Security-Auditing",
+    "Level": "Information",
+    "EventData": {
+      "TargetUserName": "m.santos",
+      "TargetDomainName": "CORP",
+      "LogonType": "3",
+      "IpAddress": "203.0.113.66",
+      "IpPort": "51002",
+      "WorkstationName": "DESKTOP-X1",
+      "Status": "0xc000006d",
+      "SubStatus": "0xc000006a"
+    }
+  },
+  {
+    "EventID": 4625,
+    "TimeCreated": "2026-10-29T13:20:32.0000000Z",
+    "Computer": "FS-01.corp.lab",
+    "Channel": "Security",
+    "Provider": "Microsoft-Windows-Security-Auditing",
+    "Level": "Information",
+    "EventData": {
+      "TargetUserName": "m.santos",
+      "TargetDomainName": "CORP",
+      "LogonType": "3",
+      "IpAddress": "203.0.113.66",
+      "IpPort": "51003",
+      "WorkstationName": "DESKTOP-X1",
+      "Status": "0xc000006d",
+      "SubStatus": "0xc000006a"
+    }
+  },
+  {
+    "EventID": 4625,
+    "TimeCreated": "2026-10-29T13:20:41.0000000Z",
+    "Computer": "FS-01.corp.lab",
+    "Channel": "Security",
+    "Provider": "Microsoft-Windows-Security-Auditing",
+    "Level": "Information",
+    "EventData": {
+      "TargetUserName": "m.santos",
+      "TargetDomainName": "CORP",
+      "LogonType": "3",
+      "IpAddress": "203.0.113.66",
+      "IpPort": "51004",
+      "WorkstationName": "DESKTOP-X1",
+      "Status": "0xc000006d",
+      "SubStatus": "0xc000006a"
+    }
+  },
+  {
+    "EventID": 4625,
+    "TimeCreated": "2026-10-29T13:20:50.0000000Z",
+    "Computer": "FS-01.corp.lab",
+    "Channel": "Security",
+    "Provider": "Microsoft-Windows-Security-Auditing",
+    "Level": "Information",
+    "EventData": {
+      "TargetUserName": "m.santos",
+      "TargetDomainName": "CORP",
+      "LogonType": "3",
+      "IpAddress": "203.0.113.66",
+      "IpPort": "51005",
+      "WorkstationName": "DESKTOP-X1",
+      "Status": "0xc000006d",
+      "SubStatus": "0xc000006a"
+    }
+  },
+  {
+    "EventID": 4625,
+    "TimeCreated": "2026-10-29T13:20:59.0000000Z",
+    "Computer": "FS-01.corp.lab",
+    "Channel": "Security",
+    "Provider": "Microsoft-Windows-Security-Auditing",
+    "Level": "Information",
+    "EventData": {
+      "TargetUserName": "m.santos",
+      "TargetDomainName": "CORP",
+      "LogonType": "3",
+      "IpAddress": "203.0.113.66",
+      "IpPort": "51006",
+      "WorkstationName": "DESKTOP-X1",
+      "Status": "0xc000006d",
+      "SubStatus": "0xc000006a"
+    }
+  },
+  {
+    "EventID": 4624,
+    "TimeCreated": "2026-10-29T13:21:25.0000000Z",
+    "Computer": "FS-01.corp.lab",
+    "Channel": "Security",
+    "Provider": "Microsoft-Windows-Security-Auditing",
+    "Level": "Information",
+    "EventData": {
+      "TargetUserName": "m.santos",
+      "TargetDomainName": "CORP",
+      "LogonType": "3",
+      "IpAddress": "203.0.113.66",
+      "IpPort": "51099",
+      "WorkstationName": "DESKTOP-X1",
+      "AuthenticationPackageName": "NTLM"
+    }
+  },
+  {
+    "EventID": 5156,
+    "TimeCreated": "2026-10-29T13:22:00.0000000Z",
+    "Computer": "FS-01.corp.lab",
+    "Channel": "Security",
+    "EventData": {
+      "Application": "svchost.exe"
+    }
+  }
+]

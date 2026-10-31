@@ -1,0 +1,72 @@
+{
+  "id": "after-hours-maintenance",
+  "name": "After-hours maintenance (benign activity)",
+  "summary": "An administrator connects over RDP to the file server at night to apply an emergency patch under an approved change ticket.",
+  "narrative": "The privileged admin account logs on interactively to the file server in the middle of the night. The detection fires because privileged logons outside business hours are risky, but the activity matches an approved change. The goal is to practise closing an alert as a benign true positive / false positive with a documented justification instead of escalating.",
+  "category": "False Positive Training",
+  "level": "N1",
+  "expected_severity": "medium",
+  "expected_rules": ["LAB-005"],
+  "benign": true,
+  "time_of_day_local": "01:40",
+  "maintenance_window": {"description": "Emergency patch for file server (KB update)", "usernames": ["adm.roliveira"], "hosts": ["fs-01"], "duration_minutes": 120},
+  "mitre": ["T1078"],
+  "hosts": ["fs-01", "ws-it-04"],
+  "learning_objectives": [
+    "Use context (change calendar, source host, account owner) to triage an alert.",
+    "Document a false-positive / benign decision properly.",
+    "Suggest tuning that would reduce noise without hiding real attacks."
+  ],
+  "investigation_questions": [
+    "Is there an approved change covering this host, account and time?",
+    "Does the source workstation belong to the account owner?",
+    "Did the session perform anything outside the scope of the change?",
+    "How would you classify and document this alert?"
+  ],
+  "variables": {},
+  "steps": [
+    {
+      "format": "windows_json",
+      "offset_seconds": 0,
+      "random_int": {"port": [49152, 65535]},
+      "record": {
+        "EventID": 4624, "TimeCreated": "{ts}", "Computer": "FS-01.corp.lab", "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
+        "EventData": {"TargetUserName": "adm.roliveira", "TargetDomainName": "CORP", "LogonType": "10",
+                      "IpAddress": "10.10.10.24", "IpPort": "{port}", "WorkstationName": "WS-IT-04",
+                      "AuthenticationPackageName": "Kerberos"}
+      }
+    },
+    {
+      "format": "windows_json",
+      "offset_seconds": 1,
+      "record": {
+        "EventID": 4672, "TimeCreated": "{ts}", "Computer": "FS-01.corp.lab", "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
+        "EventData": {"SubjectUserName": "adm.roliveira", "SubjectDomainName": "CORP",
+                      "PrivilegeList": "SeBackupPrivilege SeRestorePrivilege SeShutdownPrivilege"}
+      }
+    },
+    {
+      "format": "windows_json",
+      "offset_seconds": 140,
+      "record": {
+        "EventID": 4688, "TimeCreated": "{ts}", "Computer": "FS-01.corp.lab", "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
+        "EventData": {"SubjectUserName": "adm.roliveira", "SubjectDomainName": "CORP",
+                      "NewProcessName": "C:\\Windows\\System32\\wusa.exe",
+                      "CommandLine": "wusa.exe C:\\Patches\\windows-kb-update-x64.msu /quiet /norestart",
+                      "ParentProcessName": "C:\\Windows\\explorer.exe"}
+      }
+    },
+    {
+      "format": "windows_json",
+      "offset_seconds": 2400,
+      "record": {
+        "EventID": 4634, "TimeCreated": "{ts}", "Computer": "FS-01.corp.lab", "Channel": "Security",
+        "Provider": "Microsoft-Windows-Security-Auditing", "Level": "Information",
+        "EventData": {"TargetUserName": "adm.roliveira", "TargetDomainName": "CORP", "LogonType": "10"}
+      }
+    }
+  ]
+}

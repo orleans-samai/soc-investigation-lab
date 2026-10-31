@@ -1,0 +1,34 @@
+[
+  {
+    "timestamp": "2026-10-29T15:10:00Z",
+    "event_source": "linux_auth",
+    "event_type": "authentication",
+    "event_action": "logon_success",
+    "outcome": "success",
+    "hostname": "db-01",
+    "username": "r.oliveira",
+    "source_ip": "10.10.2.5",
+    "message": "SSH login accepted for r.oliveira from 10.10.2.5 (publickey)",
+    "raw": "2026-10-29T15:10:00+00:00 db-01 sshd[811]: Accepted publickey for r.oliveira from 10.10.2.5 port 50001 ssh2"
+  },
+  {
+    "timestamp": "2026-10-29T15:11:12Z",
+    "event_source": "linux_auth",
+    "event_type": "privilege",
+    "event_action": "sudo_command",
+    "outcome": "success",
+    "hostname": "db-01",
+    "username": "r.oliveira",
+    "target_username": "root",
+    "command_line": "/usr/bin/systemctl restart postgresql",
+    "message": "r.oliveira ran '/usr/bin/systemctl restart postgresql' as root via sudo",
+    "raw": "2026-10-29T15:11:12+00:00 db-01 sudo: r.oliveira : TTY=pts/0 ; PWD=/home/r.oliveira ; USER=root ; COMMAND=/usr/bin/systemctl restart postgresql"
+  },
+  {
+    "timestamp": "2026-10-29T15:30:00",
+    "event_source": "internal",
+    "event_type": "other",
+    "event_action": "note",
+    "raw": "invalid: timestamp has no timezone"
+  }
+]
