@@ -75,6 +75,19 @@ class RuleOverride(ApiModel):
     params: dict[str, int] = Field(default_factory=dict)
 
 
+class CustomRuleRecord(ApiModel):
+    """An analyst-written Sigma rule as stored; it is compiled into the engine at startup."""
+
+    id: str
+    source: str
+    created_at: UtcDatetime = Field(default_factory=utcnow)
+    updated_at: UtcDatetime = Field(default_factory=utcnow)
+
+
+class SigmaRuleRequest(ApiModel):
+    source: str = Field(min_length=1, max_length=64_000)
+
+
 class RuleInfo(ApiModel):
     id: str
     name: str
@@ -88,6 +101,8 @@ class RuleInfo(ApiModel):
     logic: str
     false_positives: list[str]
     response: list[str]
+    custom: bool = False
+    source: str | None = None
     alert_count: int = 0
     last_triggered: UtcDatetime | None = None
 

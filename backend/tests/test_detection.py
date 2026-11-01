@@ -184,7 +184,7 @@ class TestEngine:
         assert "LAB-001" in rules_fired(engine, ssh_failures(10))
 
     def test_every_rule_has_metadata(self, engine):
-        assert len(engine.rules) == 17
+        assert len(engine.rules) == 18
         for rule in engine.rules:
             assert rule.mitre and rule.response and rule.false_positives and rule.logic
             rule.logic.format(**rule.defaults())  # logic templates only reference real params

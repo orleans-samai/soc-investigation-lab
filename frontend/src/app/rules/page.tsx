@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, FlaskConical, Play, RotateCw, Save } from "lucide-react";
+import { Download, FilePlus2, FlaskConical, ListChecks, Pencil, Play, RotateCw, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 import { toast } from "sonner";
@@ -8,14 +8,53 @@ import useSWR from "swr";
 
 import { SeverityBadge, Tag } from "@/components/soc/badges";
 import { CodeBlock, MitreChip, PageHeader, Term } from "@/components/soc/common";
+import { RegressionReportView } from "@/components/soc/regression-report";
+import { SigmaEditor } from "@/components/soc/sigma-editor";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog, Sheet, SheetContent } from "@/components/ui/overlays";
 import { Input, Label, Panel, PanelHeader, Skeleton, Switch, Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/primitives";
-import { patch, post } from "@/lib/api";
-import type { BacktestResult, RuleInfo } from "@/lib/types";
+import { api, patch, post } from "@/lib/api";
+import type { BacktestResult, RegressionReport, RuleChange, RuleInfo } from "@/lib/types";
 import { useUrlState } from "@/lib/use-url-state";
 import { cn, downloadText, formatTs, humanize, nf, relative } from "@/lib/utils";
 
-function RuleDetail({ rule, onChanged }: { rule: RuleInfo; onChanged: () => void }) {
+/** Runs the regression suite for a candidate change (or the current rules) and shows it in a side panel. */
+function useRegression() {
+  const [report, setReport] = React.useState<RegressionReport | null>(null);
+  const [open, setOpen] = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
+  async function run(changes: Record<string, RuleChange> = {}) {
+    setBusy(true);
+    try {
+      setReport(await post<RegressionReport>("/detection/regression", { changes }));
+      setOpen(true);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  const sheet = (
+    <Sheet open={open} onOpenChange={setOpen}>
+      {report && (
+        <SheetContent
+          title="Detection regression test"
+          description="Every scenario replayed against the current rules and the candidate change"
+          className="max-w-3xl"
+        >
+          <div className="p-5">
+            <RegressionReportView report={report} />
+          </div>
+        </SheetContent>
+      )}
+    </Sheet>
+  );
+  return { run, busy, sheet };
+}
+
+function RuleDetail({ rule, onChanged, onDeleted }: { rule: RuleInfo; onChanged: () => void; onDeleted: () => void }) {
+  const regression = useRegression();
+  const [editing, setEditing] = React.useState(false);
   // Keyed by the tuned params so the Sigma export refreshes after "Save & re-run".
   const { data: sigma } = useSWR<string>(`/rules/${rule.id}/sigma?v=${rule.params.map((p) => p.value).join("-")}`);
   const [params, setParams] = React.useState<Record<string, number>>({});
@@ -50,7 +89,33 @@ function RuleDetail({ rule, onChanged }: { rule: RuleInfo; onChanged: () => void
         }
         description={`${humanize(rule.rule_type)} rule · data: ${rule.data_sources.join(", ")}`}
         actions={
-          <label className="flex items-center gap-2 text-xs text-muted">
+          <div className="flex items-center gap-1.5">
+          {rule.custom && (
+            <>
+              <Sheet open={editing} onOpenChange={setEditing}>
+                <Button size="icon-sm" variant="ghost" aria-label={`Edit ${rule.id} Sigma source`} onClick={() => setEditing(true)}>
+                  <Pencil />
+                </Button>
+                {editing && <SigmaEditor rule={rule} onSaved={() => (setEditing(false), onChanged())} />}
+              </Sheet>
+              <ConfirmDialog
+                trigger={
+                  <Button size="icon-sm" variant="ghost" aria-label={`Delete ${rule.id}`}>
+                    <Trash2 />
+                  </Button>
+                }
+                title={`Delete ${rule.id}?`}
+                description="The rule leaves the engine. Alerts it already raised stay in the lab, so investigations keep their evidence."
+                confirmLabel="Delete rule"
+                onConfirm={async () => {
+                  await api(`/rules/custom/${rule.id}`, { method: "DELETE" });
+                  toast.success(`${rule.id} deleted`);
+                  onDeleted();
+                }}
+              />
+            </>
+          )}
+          <label className="ml-1 flex items-center gap-2 text-xs text-muted">
             {rule.enabled ? "Enabled" : "Disabled"}
             <Switch
               checked={rule.enabled}
@@ -64,6 +129,7 @@ function RuleDetail({ rule, onChanged }: { rule: RuleInfo; onChanged: () => void
               }
             />
           </label>
+          </div>
         }
       />
       <div className="space-y-5 p-4">
@@ -81,6 +147,7 @@ function RuleDetail({ rule, onChanged }: { rule: RuleInfo; onChanged: () => void
               <TabsList className="border-0 px-0">
                 <TabsTrigger value="logic">Engine logic</TabsTrigger>
                 <TabsTrigger value="sigma">Sigma rule</TabsTrigger>
+                {rule.custom && <Tag className="ml-2 self-center">custom</Tag>}
               </TabsList>
               <Button size="sm" variant="ghost" disabled={!sigma} onClick={() => sigma && downloadText(`${rule.id}.yml`, sigma, "application/yaml")}>
                 <Download /> .yml
@@ -92,8 +159,9 @@ function RuleDetail({ rule, onChanged }: { rule: RuleInfo; onChanged: () => void
             <TabsContent value="sigma">
               {sigma ? <CodeBlock>{sigma}</CodeBlock> : <Skeleton className="h-40 w-full" />}
               <p className="mt-1.5 text-2xs text-subtle">
-                Portable Sigma YAML with the current parameters. Thresholds are exported as Sigma v2 correlation rules; convert with pySigma / sigma-cli to
-                Splunk, Elastic, Sentinel and other SIEMs.
+                {rule.custom
+                  ? "Your rule as written, with tuned thresholds written back into its correlation."
+                  : "Portable Sigma YAML with the current parameters. Thresholds are exported as Sigma v2 correlation rules; convert with pySigma / sigma-cli to Splunk, Elastic, Sentinel and other SIEMs."}
               </p>
             </TabsContent>
           </Tabs>
@@ -105,7 +173,8 @@ function RuleDetail({ rule, onChanged }: { rule: RuleInfo; onChanged: () => void
               Tuning - <Term name="Threshold">thresholds</Term> & windows
             </h3>
             <p className="mb-3 text-xs text-muted">
-              Change a value and <Term name="Backtest">backtest</Term> it against all stored events before saving. Saved values apply to future detection runs.
+              Change a value, <Term name="Backtest">backtest</Term> it on stored events, then run the <Term name="Regression test">regression test</Term> to
+              prove every attack scenario is still caught before you save.
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
               {rule.params.map((p) => (
@@ -136,6 +205,13 @@ function RuleDetail({ rule, onChanged }: { rule: RuleInfo; onChanged: () => void
                 onClick={() => run("backtest", async () => setBacktest(await post<BacktestResult>(`/rules/${rule.id}/backtest`, { params })))}
               >
                 <FlaskConical /> Backtest
+              </Button>
+              <Button
+                disabled={invalid}
+                loading={regression.busy}
+                onClick={() => regression.run({ [rule.id]: { params } })}
+              >
+                <ListChecks /> Regression test
               </Button>
               <Button
                 variant="primary"
@@ -198,11 +274,17 @@ function RuleDetail({ rule, onChanged }: { rule: RuleInfo; onChanged: () => void
           <span>
             {nf.format(rule.alert_count)} alert(s) · last triggered {rule.last_triggered ? relative(rule.last_triggered) : "never"}
           </span>
-          <Button asChild size="sm" variant="ghost">
-            <Link href={`/alerts?rule_id=${rule.id}&status=`}>View alerts</Link>
-          </Button>
+          <span className="flex gap-1">
+            <Button size="sm" variant="ghost" loading={regression.busy} onClick={() => regression.run({ [rule.id]: { enabled: !rule.enabled } })}>
+              What if {rule.enabled ? "disabled" : "enabled"}?
+            </Button>
+            <Button asChild size="sm" variant="ghost">
+              <Link href={`/alerts?rule_id=${rule.id}&status=`}>View alerts</Link>
+            </Button>
+          </span>
         </div>
       </div>
+      {regression.sheet}
     </Panel>
   );
 }
@@ -211,15 +293,34 @@ function Rules() {
   const [f, set] = useUrlState({ rule: "" });
   const { data: rules, mutate } = useSWR<RuleInfo[]>("/rules");
   const [rerunning, setRerunning] = React.useState(false);
+  const [creating, setCreating] = React.useState(false);
+  const regression = useRegression();
   const selected = rules?.find((r) => r.id === f.rule) ?? rules?.[0];
 
   return (
     <>
       <PageHeader
         title="Detection rules"
-        description="Tune thresholds, backtest them on stored events, and export any rule as Sigma."
+        description="Write rules in Sigma, tune thresholds, and prove with a regression test that every attack is still caught."
         actions={
           <>
+          <Sheet open={creating} onOpenChange={setCreating}>
+            <Button onClick={() => setCreating(true)}>
+              <FilePlus2 /> New Sigma rule
+            </Button>
+            {creating && (
+              <SigmaEditor
+                onSaved={(saved) => {
+                  setCreating(false);
+                  mutate();
+                  set({ rule: saved.id });
+                }}
+              />
+            )}
+          </Sheet>
+          <Button loading={regression.busy} onClick={() => regression.run()}>
+            <ListChecks /> Regression suite
+          </Button>
           <Button asChild>
             <a href="/api/rules/sigma.yml" download>
               <Download /> Export all as Sigma
@@ -242,6 +343,7 @@ function Rules() {
           >
             <RotateCw /> Re-run detection
           </Button>
+          {regression.sheet}
           </>
         }
       />
@@ -275,6 +377,7 @@ function Rules() {
                   <span className="w-8 text-right font-mono text-xs tabular-nums text-muted" title="Alerts">
                     {r.alert_count}
                   </span>
+                  {r.custom && <Tag>custom</Tag>}
                   {!r.enabled && <Tag>off</Tag>}
                 </button>
               </li>
@@ -282,7 +385,7 @@ function Rules() {
           </ul>
         </Panel>
         {selected ? (
-          <RuleDetail rule={selected} onChanged={() => mutate()} />
+          <RuleDetail key={selected.id} rule={selected} onChanged={() => mutate()} onDeleted={() => (set({ rule: "" }), mutate())} />
         ) : (
           <Skeleton className="h-96 w-full" />
         )}

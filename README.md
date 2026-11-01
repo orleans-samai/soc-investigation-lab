@@ -1,10 +1,30 @@
 # SOC Investigation Lab
 
-**Security Operations & Incident Investigation Simulator**
+**O simulador de SOC em que você investiga o ataque e conserta a detecção.**
 
-Plataforma educacional que simula a rotina de um analista SOC N1/N2: logs Windows e Linux são normalizados, um motor de detecção
-em Python gera alertas mapeados ao MITRE ATT&CK, alertas são correlacionados em incidentes e cada investigação termina em uma
-decisão documentada e em um relatório técnico.
+Plataforma educacional que simula a rotina de um analista SOC N1/N2: logs Windows, Linux e de aplicação são normalizados, um motor
+de detecção em Python gera alertas mapeados ao MITRE ATT&CK, alertas são correlacionados em incidentes e cada investigação termina
+em uma decisão documentada e em um relatório técnico.
+
+### O que o diferencia
+
+A maioria dos laboratórios de SOC para estudo para na investigação: você responde perguntas sobre um ataque pronto. Aqui o ciclo
+fecha do lado da engenharia de detecção (*purple team*):
+
+1. **Teste de regressão de detecção** - antes de salvar um ajuste de regra, o lab reexecuta *todos* os cenários com a regra atual e
+   com a proposta e mostra o antes/depois: quantos ataques continuam detectados, quanto ruído saiu e qual cenário quebrou. É o
+   "rodar a suíte de testes antes do merge" aplicado a regras de SIEM.
+2. **Modo plantão** - uma fila cronometrada que mistura ataques reais, atividade autorizada e falsos positivos. Cada alerta exige
+   veredito e justificativa; a nota pune o ataque fechado como ruído muito mais do que a escalada desnecessária. Treina o que derruba
+   SOCs de verdade: **fadiga de alertas**.
+3. **Regras Sigma escritas por você** - escreva ou cole Sigma (incluindo correlações `event_count`/`value_count`), valide com
+   *dry-run* nos eventos do lab e coloque no motor ao lado das regras nativas. A regra entra no teste de regressão e exporta de volta.
+4. **Contexto brasileiro** - golpe de **tomada de conta no internet banking com PIX** (regra LAB-018 sobre logs de aplicação), o
+   caso benigno de troca de celular verificada pela central, e relatório com **prazos de comunicação à ANPD (LGPD)**: 3 dias úteis,
+   conforme a Resolução CD/ANPD nº 15/2024.
+5. **Cenários a partir de logs reais** - selecione eventos com uma consulta no Log Explorer, anonimize contas, hosts e IPs e salve
+   como cenário reexecutável com gabarito (o motor calcula as detecções esperadas). Exporte em JSON para compartilhar com a turma ou
+   o time.
 
 > **Simulation Mode** - todos os dados são sintéticos (empresa fictícia *Lab Corp*, IPs das faixas de documentação RFC 5737).
 > Nenhum serviço externo, conta ou chave de API é necessário.
@@ -15,6 +35,14 @@ decisões documentadas*.
 ![Dashboard do SOC Investigation Lab](docs/screenshots/dashboard.png)
 
 <table>
+  <tr>
+    <td><img src="docs/screenshots/regression.png" alt="Teste de regressão reprovando um ajuste de limiar"></td>
+    <td><img src="docs/screenshots/shift.png" alt="Modo plantão com fila cronometrada"></td>
+  </tr>
+  <tr>
+    <td align="center">Teste de regressão: o ajuste tira ruído, mas perde um ataque</td>
+    <td align="center">Modo plantão: ataques, ruído e o relógio correndo</td>
+  </tr>
   <tr>
     <td><img src="docs/screenshots/incident.png" alt="Investigação de incidente com timeline correlacionada"></td>
     <td><img src="docs/screenshots/query-language.png" alt="Linguagem de consulta com agregação stats count by"></td>
@@ -63,14 +91,15 @@ Observações:
 | **Dashboard SOC** | KPIs, atividade por período, severidade, regras mais acionadas, hosts e IPs de origem, atividade da investigação. Filtros por período, severidade, host e status. Tudo calculado pelo backend. |
 | **Log Explorer** | Filtros combináveis (usuário, IP, host, origem, tipo, resultado, nível, dataset, intervalo UTC) **ou linguagem de consulta** no estilo KQL/SPL (`outcome:failure host:bastion-01 \| stats count by source_ip \| head 10`) com drill-down a partir das agregações. Visão normalizada/bruta, detalhe completo do evento e exportação CSV/JSON. |
 | **Importação de logs** | Windows (JSON/NDJSON, incluindo **Sysmon** 1/3/10/11/22), Linux `auth.log` (syslog clássico e RFC 3339) e formato normalizado. Validação (dry run) antes de gravar, erros por linha, deduplicação por hash, fuso/ano configuráveis. |
-| **Motor de detecção** | 17 regras testadas (força bruta SSH/Windows, password spraying, login após força bruta, logon privilegiado fora do horário, root via SSH, criação de conta, grupo privilegiado, PowerShell suspeito, limpeza de log, tarefa agendada, serviço novo, movimento lateral, abuso de sudo, **acesso à memória do LSASS**, **Office abrindo shell** e **correspondência com threat intel**). Ajuste de limiares com **backtest** e **exportação Sigma** (regras de correlação Sigma v2 para os limiares). |
+| **Motor de detecção** | 18 regras nativas testadas (força bruta SSH/Windows, password spraying, login após força bruta, logon privilegiado fora do horário, root via SSH, criação de conta, grupo privilegiado, PowerShell suspeito, limpeza de log, tarefa agendada, serviço novo, movimento lateral, abuso de sudo, **acesso à memória do LSASS**, **Office abrindo shell**, **correspondência com threat intel** e **tomada de conta com PIX**). Ajuste de limiares com **backtest**, **teste de regressão** sobre todos os cenários, **regras Sigma próprias** e **exportação Sigma** (correlações Sigma v2 para os limiares). |
 | **Threat intelligence** | Feed local e offline de indicadores (IP, domínio, URL, SHA256) consultado pelo motor; cada correspondência vira alerta com a severidade e a confiança do indicador. |
-| **Simulações** | 8 cenários de ataque (inclusive um benigno para treinar falso positivo e um com telemetria Sysmon) que geram logs brutos, passam pelos parsers reais e validam se as regras esperadas dispararam. |
+| **Simulações** | 11 cenários (8 ataques, 3 de ruído: manutenção autorizada, troca de celular verificada e senha esquecida) que geram logs brutos, passam pelos parsers reais e validam se as regras esperadas dispararam. Cenários próprios a partir de logs importados, com anonimização, exportação e importação em JSON. |
+| **Modo plantão** | Fila cronometrada com ataques e ruído misturados; veredito (malicioso, benigno, falso positivo) e justificativa por alerta; nota por acurácia, SLA por severidade e qualidade da nota; debriefing com a verdade de cada alerta. |
 | **Modo desafio** | Cada execução de cenário traz perguntas de investigação com resposta verificada no servidor (por exemplo, qual conta foi comprometida ou qual máscara de acesso foi pedida ao LSASS). Dicas custam metade dos pontos; o gabarito e as explicações aparecem só depois do envio. |
 | **Alertas e incidentes** | Fila de triagem, indícios de falso positivo, correlação automática, timeline, entidades (usuário/host/IP com perfil), notas, playbook de resposta, classificação obrigatória para encerrar. |
 | **MITRE ATT&CK** | Matriz de cobertura: técnicas cobertas por regra, técnicas observadas em alertas e lacunas. |
-| **Relatórios** | Resumo executivo, escopo, detecções, ATT&CK, timeline, IOCs, evidências brutas, recomendações e notas. Exporta Markdown/JSON e imprime em PDF. |
-| **Métricas** | Precisão, taxa de falso positivo, MTTD, MTTA, MTTR, desempenho por regra, cobertura dos cenários e pontuação média nos desafios. |
+| **Relatórios** | Resumo executivo, escopo, detecções, ATT&CK, timeline, IOCs, evidências brutas, recomendações, **avaliação LGPD com prazos ANPD** e notas. Exporta Markdown/JSON e imprime em PDF. |
+| **Métricas** | Precisão, taxa de falso positivo, MTTD, MTTA, MTTR, desempenho por regra, cobertura dos cenários, pontuação nos desafios, histórico de plantões e último teste de regressão. |
 
 ## Arquitetura
 
@@ -159,20 +188,32 @@ motor de detecção. Para voltar ao estado inicial use **Lab Settings → Reset 
 ## Testes e qualidade
 
 ```bash
-cd backend && .venv/bin/pytest            # 135 testes: parsers, regras, cenários, desafios, consultas, Sigma, SQLite e API
+cd backend && .venv/bin/pytest            # 174 testes: parsers, regras, cenários, desafios, consultas, Sigma, regressão, plantão, SQLite e API
 cd backend && .venv/bin/ruff check .
 cd frontend && npm run lint && npm run typecheck && npm run build
 cd frontend && NEXT_OUTPUT=export npm run build:export && npx playwright install chromium && npm run test:e2e
 ```
 
 Os testes Playwright (`frontend/e2e/`) sobem o lab do zero como o app desktop e percorrem o fluxo do analista: dashboard,
-simulação, incidente encerrado com justificativa, relatório, modo desafio, linguagem de consulta e importação com erros.
+simulação, incidente encerrado com justificativa, relatório, modo desafio, linguagem de consulta, importação com erros, teste de
+regressão reprovando um ajuste, regra Sigma própria, plantão pontuado e cenário criado a partir de uma consulta.
 As capturas de tela do README são regeneradas com `node scripts/screenshots.mjs`.
 
 `tests/test_scenarios.py` funciona como uma validação de detecção: cada cenário, com duas sementes diferentes, precisa disparar
 **exatamente** as regras para as quais foi desenhado, e o conjunto de cenários precisa cobrir todas as regras.
 
 ## Roteiro de demonstração (5 a 8 minutos)
+
+O roteiro curto que mostra o diferencial (3 minutos):
+
+* **Detection rules → LAB-002** - suba o limiar de 6 para 15 e clique em *Regression test*: o ruído do cenário de senha esquecida
+  some, mas o teste **reprova** porque o *password spraying* deixa de ser detectado. Volte o valor e escreva uma regra Sigma que
+  resolva o falso positivo sem perder o ataque.
+* **Shift** - comece um plantão de 10 minutos e mostre o debriefing: o ataque fechado como ruído zera a pontuação daquele alerta.
+* **Simulations → Internet-banking account takeover and PIX fraud** - investigue, marque *dados pessoais afetados* no incidente e
+  mostre no relatório o prazo da ANPD.
+
+Roteiro completo:
 
 1. **Dashboard** - explique o *Simulation Mode*, o relógio simulado e os indicadores.
 2. **Simulations → "Malicious macro, PowerShell download cradle"** - rode o cenário e mostre o pipeline
@@ -239,8 +280,13 @@ samples/          arquivos para importação
 * Sem autenticação: é um laboratório local de usuário único.
 * O motor reavalia todos os eventos a cada ingestão: adequado a centenas de milhares de eventos; volumes maiores pediriam
   detecção incremental e PostgreSQL atrás do mesmo repositório.
-* Possíveis evoluções: importação de regras Sigma, logs de proxy/firewall como novas fontes, casos multiusuário com SLA e
-  interface em português.
+* O subconjunto Sigma cobre o que analistas escrevem no dia a dia; correlações `temporal`, modificadores `base64`/`windash` e
+  agregações com pipe (obsoletas no Sigma) ainda não são aceitos e são recusados com mensagem clara.
+* A anonimização de cenários troca contas, hosts e IPs em todos os campos e no texto bruto, mas não detecta segredos em texto livre:
+  revise a prévia antes de compartilhar.
+* Os prazos da LGPD contam só dias úteis de segunda a sexta (feriados não entram) e são uma referência didática, não orientação jurídica.
+* Possíveis evoluções: interface em português, logs de proxy/firewall como novas fontes, ranking de turma para o modo plantão e
+  modo multiusuário.
 
 ---
 

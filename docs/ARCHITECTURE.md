@@ -42,12 +42,37 @@ flowchart LR
 |---|---|
 | `app/models/` | Pydantic models - the API contract and the persisted schema |
 | `app/parsers/` | Windows JSON, Linux auth.log and normalized parsers + format detection |
-| `app/detection/` | Rule base classes, the 17 rules, the engine, inventory, threat-intel feed, Sigma export and MITRE catalog |
+| `app/detection/` | Rule base classes, the 18 built-in rules, the Sigma compiler for custom rules (`sigma_rules.py`), the engine, inventory, threat-intel feed, Sigma export and MITRE catalog |
 | `app/simulation/` | Scenario rendering and the deterministic baseline generator |
-| `app/services/` | Orchestration (`lab.py`), queries, analytics, entities, reports, ingestion |
+| `app/services/` | Orchestration (`lab.py`), queries, analytics, entities, reports, ingestion, regression testing, shift mode, scenario authoring |
 | `app/storage/` | SQLite and JSON persistence behind in-memory repositories |
 | `app/api/` | FastAPI routers (OpenAPI at `/docs`) |
 | `data/` | Read-only reference data: seed events, scenarios, inventory, ATT&CK subset |
+
+## The purple-team loop
+
+Three services close the loop between investigating and fixing detections. None of them has its own engine: they reuse the
+parsers, the scenario renderer and `DetectionEngine`, so what they report is what the lab would actually do.
+
+* **Regression testing** (`services/regression.py`, `POST /api/detection/regression`). Every scenario is rendered with fixed seeds
+  (1 and 99) on top of the baseline week, then evaluated with the rule configuration in force and with the candidate changes.
+  Only the changed rules are re-run for the candidate. Attack scenarios are graded `detected / regressed / fixed / missed`, benign
+  ones `noise_reduced / noise_added / unchanged`, and baseline alerts per rule are compared. The gate fails on any regression.
+  Nothing is written to the lab; rendered scenarios are cached per lab instance.
+* **Custom Sigma rules** (`detection/sigma_rules.py`, `/api/rules/custom`). Sigma YAML is compiled into a `SigmaRule` that
+  subclasses `Rule`, so it is tuned, toggled, backtested, regression-tested and exported like a built-in rule. An
+  `event_count`/`value_count` correlation becomes the `threshold` and `window_minutes` parameters. Field names are resolved through an
+  alias table (Windows/Sigma names to normalized fields), then `fields` (raw EventData in snake_case).
+* **Shift mode** (`services/shifts.py`, `/api/shifts`). Starting a shift runs two attack and two noise scenarios through the normal
+  simulation path and queues their alerts. Ground truth (`Scenario.expected_verdict`) never leaves the server until the shift
+  ends. Each alert scores accuracy (6), speed against a severity SLA (2) and note quality (2).
+* **Scenario authoring** (`services/authoring.py`, `/api/simulations/scenarios`). A Log Explorer query selects up to 500 events,
+  which become `normalized_json` steps with their original relative offsets. Literal braces are escaped (`{{ }}`) so only `{ts}` is
+  substituted, and each replay prefixes the raw text with its timestamp so event ids stay unique. Optional anonymization maps
+  accounts, hosts and IPs to stable pseudonyms in every field, including the raw text. The answer key (expected rules, severity,
+  ATT&CK) comes from replaying the draft through the engine.
+
+Authored content (custom rules and scenarios) is stored in its own collections and survives a lab reset.
 
 ## Persistence
 

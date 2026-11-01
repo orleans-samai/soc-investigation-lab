@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Check, CircleDashed, FlaskConical, Play, X } from "lucide-react";
+import { ArrowRight, Check, CircleDashed, Download, FlaskConical, Play, Trash2, Upload, X } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 import { toast } from "sonner";
@@ -12,12 +12,50 @@ import { ChallengePanel } from "@/components/soc/challenge-panel";
 import { SignalChain, type ChainStage } from "@/components/soc/signal-chain";
 import { useInvestigation } from "@/components/soc/investigation-context";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/overlays";
 import { Input, Label, Panel, PanelHeader, Skeleton } from "@/components/ui/primitives";
-import { post } from "@/lib/api";
+import { api, post } from "@/lib/api";
 import type { ScenarioSummary, SimulationDetail, SimulationRun } from "@/lib/types";
 import { useUrlState } from "@/lib/use-url-state";
 import { cn, formatTs, relative } from "@/lib/utils";
 import { alertHref, incidentHref } from "@/lib/routes";
+
+const VERDICT_TAG: Record<ScenarioSummary["verdict"], string | null> = { malicious: null, benign: "benign", false_positive: "false positive" };
+
+function ScenarioImport({ onImported }: { onImported: (s: ScenarioSummary) => void }) {
+  const input = React.useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = React.useState(false);
+  return (
+    <>
+      <input
+        ref={input}
+        type="file"
+        accept="application/json,.json"
+        className="hidden"
+        aria-label="Scenario JSON file"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (!file) return;
+          setBusy(true);
+          try {
+            const body = JSON.parse(await file.text());
+            const saved = await post<ScenarioSummary>("/simulations/scenarios/import", body);
+            toast.success(`Scenario "${saved.name}" added`);
+            onImported(saved);
+          } catch (err) {
+            toast.error(err instanceof SyntaxError ? "The file is not valid JSON" : (err as Error).message);
+          } finally {
+            setBusy(false);
+          }
+        }}
+      />
+      <Button loading={busy} onClick={() => input.current?.click()}>
+        <Upload /> Import scenario
+      </Button>
+    </>
+  );
+}
 
 function Pipeline({ detail }: { detail: SimulationDetail }) {
   const { run, alerts, incidents } = detail;
@@ -145,7 +183,15 @@ function Simulations() {
     <>
       <PageHeader
         title="Simulations"
-        description="Inject a synthetic attack, then check which rules fired against the ones it was built to trigger."
+        description="Inject an attack or a noise scenario, then check which rules fired against the ones it was built to trigger."
+        actions={
+          <>
+            <Button asChild>
+              <Link href="/events?mode=query">Build from logs</Link>
+            </Button>
+            <ScenarioImport onImported={(s) => (mutate(), set({ scenario: s.id, run: "" }))} />
+          </>
+        }
       />
       <div className="grid gap-4 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <Panel className="h-fit overflow-hidden">
@@ -172,7 +218,9 @@ function Simulations() {
                       <SeverityBadge severity={s.expected_severity} />
                       <Tag>{s.category}</Tag>
                       <Tag>{s.level}</Tag>
-                      {s.benign && <Tag className="text-success">benign</Tag>}
+                      {VERDICT_TAG[s.verdict] && <Tag className="text-success">{VERDICT_TAG[s.verdict]}</Tag>}
+                      {s.origin === "custom" && <Tag>custom</Tag>}
+                      {s.tags.includes("Brazil") && <Tag>BR</Tag>}
                       {s.challenge_points > 0 && <Tag>{s.challenge_points} pts</Tag>}
                     </div>
                   </div>
@@ -193,6 +241,29 @@ function Simulations() {
                 description={`${selected.category} · ${selected.level} · ~${selected.event_estimate} events · hosts: ${selected.hosts.join(", ")}`}
                 actions={
                   <div className="flex items-end gap-2">
+                    <Button asChild size="icon" variant="ghost" aria-label="Download scenario as JSON" title="Download as JSON (share it)">
+                      <a href={`/api/simulations/scenarios/${selected.id}/export`} download>
+                        <Download />
+                      </a>
+                    </Button>
+                    {selected.origin === "custom" && (
+                      <ConfirmDialog
+                        trigger={
+                          <Button size="icon" variant="ghost" aria-label="Delete scenario">
+                            <Trash2 />
+                          </Button>
+                        }
+                        title={`Delete "${selected.name}"?`}
+                        description="The scenario is removed from the library. Runs, alerts and incidents it already produced are kept."
+                        confirmLabel="Delete scenario"
+                        onConfirm={async () => {
+                          await api(`/simulations/scenarios/${selected.id}`, { method: "DELETE" });
+                          toast.success("Scenario deleted");
+                          set({ scenario: "", run: "" });
+                          mutate();
+                        }}
+                      />
+                    )}
                     <div className="hidden sm:block">
                       <Label htmlFor="seed" className="sr-only">
                         Seed
@@ -218,7 +289,7 @@ function Simulations() {
                     ))}
                   </div>
                   <div className="text-xs text-muted">
-                    Designed to trigger:{" "}
+                    {selected.expected_rules.length ? "Designed to trigger: " : "Designed to trigger no rule (pure investigation)."}
                     {selected.expected_rules.map((r) => (
                       <Link key={r} href={`/rules?rule=${r}`} className="mr-1.5 whitespace-nowrap font-mono text-primary hover:underline">
                         {r}

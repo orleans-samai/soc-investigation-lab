@@ -45,6 +45,8 @@ class Incident(ApiModel):
     last_seen: UtcDatetime
     notes: list[Note] = Field(default_factory=list)
     resolution: str | None = None
+    # LGPD: the incident affected personal data (None = not assessed yet).
+    personal_data: bool | None = None
     created_at: UtcDatetime = Field(default_factory=utcnow)
     updated_at: UtcDatetime = Field(default_factory=utcnow)
     acknowledged_at: UtcDatetime | None = None
@@ -63,6 +65,7 @@ class IncidentUpdate(ApiModel):
     severity: Severity | None = None
     assignee: str | None = Field(default=None, max_length=80)
     resolution: str | None = Field(default=None, max_length=4000)
+    personal_data: bool | None = None
 
 
 class NoteCreate(ApiModel):

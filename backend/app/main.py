@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app import __version__
-from app.api import detection, events, investigation
+from app.api import detection, events, investigation, shifts
 from app.config import Settings, get_settings
 from app.services.lab import LabService
 
@@ -44,7 +44,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_methods=["GET", "POST", "PATCH"],
         allow_headers=["*"],
     )
-    for module in (events, detection, investigation):
+    for module in (events, detection, investigation, shifts):
         app.include_router(module.router, prefix="/api")
 
     @app.get("/api/health", tags=["system"])

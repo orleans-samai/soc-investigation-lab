@@ -10,6 +10,7 @@ from app.detection.rules.authentication import (
     WindowsBruteForce,
 )
 from app.detection.rules.endpoint import AuditLogCleared, ScheduledTaskCreated, ServiceInstalled, SuspiciousPowerShell
+from app.detection.rules.fraud import PixAccountTakeover
 from app.detection.rules.intel import ThreatIntelMatch
 from app.detection.rules.sysmon import LsassMemoryAccess, OfficeSpawnsShell
 
@@ -33,5 +34,6 @@ def builtin_rules() -> list[Rule]:
         LsassMemoryAccess(),
         ThreatIntelMatch(),
         OfficeSpawnsShell(),
+        PixAccountTakeover(),
     ]
     return sorted(rules, key=lambda r: r.id)

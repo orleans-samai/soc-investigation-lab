@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, FileJson, ScrollText, Search, Upload, X } from "lucide-react";
+import { Download, FileJson, FlaskConical, ScrollText, Search, Upload, X } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 import useSWR from "swr";
@@ -8,8 +8,9 @@ import useSWR from "swr";
 import { EmptyState, ErrorState, PageHeader, Pagination, Segmented, SortHeader, tableCls, Term } from "@/components/soc/common";
 import { EntityLink, useInvestigation } from "@/components/soc/investigation-context";
 import { drillDown, QueryBar } from "@/components/soc/query-bar";
+import { ScenarioBuilder } from "@/components/soc/scenario-builder";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Select } from "@/components/ui/overlays";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Select, Sheet } from "@/components/ui/overlays";
 import { Input, Label, Panel, Skeleton } from "@/components/ui/primitives";
 import { qs } from "@/lib/api";
 import type { EventFacets, NormalizedEvent, Page } from "@/lib/types";
@@ -145,6 +146,7 @@ function Explorer() {
     set({ query: `${base} | sort ${nextOrder === "desc" ? "-" : ""}${field}`.trim() });
   };
   const active = Object.entries(filterQuery).filter(([, v]) => v);
+  const [building, setBuilding] = React.useState(false);
 
   return (
     <>
@@ -206,6 +208,17 @@ function Explorer() {
             matched={searched.data?.total}
             scanned={searched.data?.scanned}
           />
+          {data && data.total > 0 && dsl.trim() && (
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2">
+              <span className="text-xs text-muted">Turn these {nf.format(data.total)} events into a replayable training scenario with an answer key.</span>
+              <Sheet open={building} onOpenChange={setBuilding}>
+                <Button size="sm" onClick={() => setBuilding(true)} disabled={data.total > 500} title={data.total > 500 ? "Narrow the query to 500 events or fewer" : undefined}>
+                  <FlaskConical /> Save as scenario
+                </Button>
+                {building && <ScenarioBuilder query={dsl} onClose={() => setBuilding(false)} />}
+              </Sheet>
+            </div>
+          )}
         </Panel>
       )}
 

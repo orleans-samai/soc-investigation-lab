@@ -10,7 +10,7 @@ has unit tests in `backend/tests/` and an end-to-end validation in `backend/test
 | ID | Rule | Type | Default severity | MITRE ATT&CK | Validated by scenario |
 |---|---|---|---|---|---|
 | LAB-001 | SSH Brute Force | threshold | high | T1110.001 | `ssh-bruteforce-compromise` |
-| LAB-002 | Windows Account Brute Force | threshold | medium | T1110.001 | `windows-password-spray` |
+| LAB-002 | Windows Account Brute Force | threshold | medium | T1110.001 | `windows-password-spray`, `forgotten-password` |
 | LAB-003 | Password Spraying | threshold | high | T1110.003 | `windows-password-spray` |
 | LAB-004 | Successful Login After Brute Force | correlation | critical | T1110, T1078 | `ssh-bruteforce-compromise`, `windows-password-spray` |
 | LAB-005 | Privileged Logon Outside Business Hours | behavioral | medium | T1078 | `after-hours-maintenance` |
@@ -26,6 +26,7 @@ has unit tests in `backend/tests/` and an end-to-end validation in `backend/test
 | LAB-015 | LSASS Memory Access | behavioral | critical | T1003.001 | `lsass-credential-dumping` |
 | LAB-016 | Threat Intelligence Indicator Match | enrichment | high | T1071 | `powershell-download-cradle`, `lsass-credential-dumping` |
 | LAB-017 | Office Application Spawned a Shell | single_event | high | T1204.002 | `powershell-download-cradle` |
+| LAB-018 | Account Takeover Followed by PIX Transfer | correlation | high | T1078, T1098, T1657 | `pix-account-takeover`, `pix-new-phone-verified` |
 
 ## LAB-001 - SSH Brute Force
 
@@ -550,3 +551,41 @@ event_action = process_created (4688 / Sysmon 1)
 1. Identify the document that was opened and where it came from (mail, download, share).
 2. Review the child process command line and everything it spawned or downloaded.
 3. Quarantine the document organisation-wide and block macros in files from the internet (Mark of the Web).
+
+## LAB-018 - Account Takeover Followed by PIX Transfer
+
+A banking customer signed in from a device never seen for that account, changed contact data or registered a new PIX key / payee, and moved money shortly after.
+
+- **Type:** correlation  
+- **Data sources:** application  
+- **Severity:** high  
+- **ATT&CK:** [T1078](https://attack.mitre.org/techniques/T1078/) Valid Accounts (Initial Access); [T1098](https://attack.mitre.org/techniques/T1098/) Account Manipulation (Persistence); [T1657](https://attack.mitre.org/techniques/T1657/) Financial Theft (Impact)
+
+**Tunable parameters**
+
+| Parameter | Default | Range |
+|---|---|---|
+| Login-to-transfer window (`window_minutes`) | 30 min | 5-240 |
+| Minimum transfer (`min_amount`) | 1000 BRL | 50-1000000 |
+
+**Logic**
+
+```text
+event_source = application AND event_action = login_success AS l
+| where l.fields.device_id not in (devices previously used by l.username)
+| followed by event_action in (contact_changed, pix_key_registered, payee_added) AS c
+| followed by event_action = pix_transfer AND fields.amount >= 1000 AS t
+|   within 30 min of l, same username
+```
+
+**Known false positives**
+
+- Customer replaced or reset the phone and paid someone new on the same day (look for a step-up or call-centre identity verification just before the login).
+- Joint account holders sharing credentials from their own devices.
+
+**Response**
+
+1. Block outgoing PIX for the account and request MED (Mecanismo Especial de Devolução) for the transfers.
+2. Revoke the new device's sessions, reset the credentials and contact the customer on a verified channel.
+3. Hunt for the same source IP / device across other customers (credential stuffing campaigns hit many accounts).
+4. Customer personal data was accessed by a third party: assess LGPD notification to ANPD and the data subject.

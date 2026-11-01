@@ -79,6 +79,8 @@ class Rule(ABC):
     logic: str
     false_positives: list[str]
     response: list[str]
+    # True for analyst-authored rules (Sigma); built-in rules ship with the lab.
+    custom: bool = False
 
     def defaults(self) -> dict[str, int]:
         return {p.name: p.default for p in self.params}

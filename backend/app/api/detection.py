@@ -5,17 +5,30 @@ from __future__ import annotations
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
+from pydantic import ValidationError
 
 from app.api.deps import Lab, require_alert
 from app.detection import sigma
-from app.models.alerts import Alert, AlertStatus, AlertUpdate, BacktestRequest, BacktestResult, RuleInfo, RuleUpdate
+from app.detection.sigma_rules import SigmaError
+from app.models.alerts import (
+    Alert,
+    AlertStatus,
+    AlertUpdate,
+    BacktestRequest,
+    BacktestResult,
+    CustomRuleRecord,
+    RuleInfo,
+    RuleUpdate,
+    SigmaRuleRequest,
+)
 from app.models.common import Page, Severity, utcnow
-from app.models.simulations import ChallengeSubmission, HintRequest, ScenarioSummary, SimulationRequest, SimulationRun
-from app.services import challenge
+from app.models.simulations import ChallengeSubmission, HintRequest, Scenario, ScenarioSummary, SimulationRequest, SimulationRun
+from app.services import authoring, challenge
 from app.services.events import paginate
 from app.services.ingestion import run_simulation
-from app.simulation.scenarios import ScenarioError, estimate_events
+from app.services.regression import RegressionReport, RegressionRequest, run_regression
+from app.simulation.scenarios import ScenarioError, estimate_events, render
 
 router = APIRouter(tags=["detection"])
 
@@ -131,6 +144,8 @@ def _rule_info(lab, rule) -> RuleInfo:
         logic=rule.logic.format(**params) if params else rule.logic,
         false_positives=rule.false_positives,
         response=rule.response,
+        custom=rule.custom,
+        source=getattr(rule, "source", None),
         alert_count=len(alerts),
         last_triggered=max((a.timestamp for a in alerts), default=None),
     )
@@ -161,6 +176,120 @@ def export_sigma(lab: Lab):
     return PlainTextResponse(
         body, media_type="application/yaml", headers={"Content-Disposition": 'attachment; filename="soc-lab-sigma-rules.yml"'}
     )
+
+
+def _sigma_preview(lab, rule) -> dict:
+    """What the rule would do on the data already in the lab, without changing anything."""
+    events = lab.store.events.sorted()
+    alerts = lab.engine.run_rule(rule, events, rule.defaults())
+    return {
+        "rule": {"id": rule.id, "name": rule.name, "severity": rule.severity, "rule_type": rule.rule_type,
+                 "data_sources": rule.data_sources, "mitre": rule.mitre, "logic": rule.logic.format(**rule.defaults()),
+                 "params": rule.param_models()},
+        "matched_events": sum(1 for e in events if rule.matches(e)),
+        "alert_count": len(alerts),
+        "sample": [
+            {"timestamp": a.timestamp, "severity": a.severity, "hostname": a.hostname, "username": a.username,
+             "source_ip": a.source_ip, "reason": a.reason}
+            for a in sorted(alerts, key=lambda a: a.timestamp, reverse=True)[:10]
+        ],
+    }  # fmt: skip
+
+
+def _next_custom_id(lab) -> str:
+    seq = int(lab.store.custom_rules.meta.get("seq", 0)) + 1
+    lab.store.custom_rules.meta["seq"] = seq
+    return f"CUS-{seq:03d}"
+
+
+@router.post("/rules/custom/validate")
+def validate_custom_rule(lab: Lab, body: SigmaRuleRequest):
+    """Compile a Sigma rule and dry-run it over the lab's events."""
+    try:
+        rule = lab.compile_sigma("CUS-NEW", body.source)
+    except SigmaError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return _sigma_preview(lab, rule)
+
+
+@router.post("/rules/custom", response_model=RuleInfo, status_code=201)
+def create_custom_rule(lab: Lab, body: SigmaRuleRequest):
+    with lab.store.lock:
+        try:
+            lab.compile_sigma("CUS-NEW", body.source)
+        except SigmaError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        rule_id = _next_custom_id(lab)
+        lab.store.custom_rules.upsert(CustomRuleRecord(id=rule_id, source=body.source))
+        lab.load_custom_content()
+        rule = lab.engine.rule(rule_id)
+        result = lab.detect()
+        lab.log("analyst", "rule.created", f"{rule_id} {rule.name} added from Sigma; {len(result.new_alerts)} new alerts", "rule", rule_id)
+        lab.store.persist_all()
+    return _rule_info(lab, rule)
+
+
+def _require_custom(lab, rule_id: str) -> CustomRuleRecord:
+    record = lab.store.custom_rules.get(rule_id.upper())
+    if record is None:
+        raise HTTPException(404, f"custom rule {rule_id} not found")
+    return record
+
+
+@router.put("/rules/custom/{rule_id}", response_model=RuleInfo)
+def update_custom_rule(lab: Lab, rule_id: str, body: SigmaRuleRequest):
+    with lab.store.lock:
+        record = _require_custom(lab, rule_id)
+        try:
+            lab.compile_sigma(record.id, body.source)
+        except SigmaError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        record.source = body.source
+        record.updated_at = utcnow()
+        lab.store.custom_rules.upsert(record)
+        lab.load_custom_content()
+        rule = lab.engine.rule(record.id)
+        result = lab.detect()
+        lab.log("analyst", "rule.updated", f"{record.id} {rule.name}: Sigma source edited; {len(result.new_alerts)} new alerts",
+                "rule", record.id)  # fmt: skip
+        lab.store.persist_all()
+    return _rule_info(lab, rule)
+
+
+@router.delete("/rules/custom/{rule_id}", status_code=204)
+def delete_custom_rule(lab: Lab, rule_id: str):
+    with lab.store.lock:
+        record = _require_custom(lab, rule_id)
+        rule = lab.engine.rule(record.id)
+        lab.store.custom_rules.remove(record.id)
+        lab.store.rules.remove(record.id)
+        lab.load_custom_content()
+        lab.log("analyst", "rule.deleted", f"{record.id} {rule.name if rule else ''} deleted (its alerts are kept)", "rule", record.id)
+        lab.store.persist_all()
+
+
+@router.post("/detection/regression", response_model=RegressionReport)
+def regression(lab: Lab, body: RegressionRequest):
+    """Re-run every scenario with the current rules and with the candidate changes; report what changes."""
+    changes = {}
+    for rule_id, change in body.changes.items():
+        rule = _require_rule(lab, rule_id)
+        _validate_params(rule, change.params)
+        changes[rule.id] = change
+    with lab.store.lock:
+        report = run_regression(lab, lab.regression_suite, changes)
+        lab.store.rules.meta["last_regression"] = {
+            "generated_at": report.generated_at.isoformat(),
+            "passed": report.passed,
+            "changes": sorted(changes),
+            **report.summary.model_dump(),
+        }
+        s = report.summary
+        lab.log("analyst", "detection.regression", f"Regression suite on {', '.join(sorted(changes)) or 'current rules'}: "
+                f"{s.detected_after}/{s.attack_scenarios} attacks detected, {s.regressions} regressions, "
+                f"noise {s.noise_before} -> {s.noise_after}")  # fmt: skip
+        lab.store.persist_all()
+    return report
 
 
 @router.get("/rules/{rule_id}/sigma", response_class=PlainTextResponse)
@@ -235,8 +364,10 @@ def list_scenarios(lab: Lab):
         summaries.append(
             ScenarioSummary(
                 **s.model_dump(
-                    include=set(ScenarioSummary.model_fields) - {"event_estimate", "challenge_points", "run_count", "last_run_id"}
+                    include=set(ScenarioSummary.model_fields)
+                    - {"event_estimate", "challenge_points", "run_count", "last_run_id", "verdict"}
                 ),
+                verdict=s.expected_verdict,
                 event_estimate=estimate_events(s),
                 challenge_points=sum(q.points for q in s.challenge),
                 run_count=len(mine),
@@ -244,6 +375,83 @@ def list_scenarios(lab: Lab):
             )
         )
     return summaries
+
+
+@router.post("/simulations/scenarios/preview")
+def preview_scenario(lab: Lab, body: authoring.ScenarioDraft):
+    try:
+        scenario, pseudonyms = authoring.build_scenario(lab, body)
+    except (authoring.AuthoringError, ScenarioError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return {
+        "scenario": scenario.model_dump(mode="json", exclude={"steps"}),
+        "event_count": len(scenario.steps),
+        "duration_seconds": scenario.steps[-1].offset_seconds if scenario.steps else 0,
+        "pseudonyms": pseudonyms,
+        "sample": [s.record for s in scenario.steps[:5]],
+    }
+
+
+def _store_custom_scenario(lab, scenario: Scenario) -> ScenarioSummary:
+    with lab.store.lock:
+        lab.store.custom_scenarios.upsert(scenario)
+        lab.load_custom_content()
+        lab.regression_suite.forget(scenario.id)
+        lab.log("analyst", "scenario.saved", f"Custom scenario '{scenario.name}' saved ({len(scenario.steps)} events, "
+                f"expects {', '.join(scenario.expected_rules) or 'no detections'})", "scenario", scenario.id)  # fmt: skip
+        lab.store.persist_all()
+    return next(s for s in list_scenarios(lab) if s.id == scenario.id)
+
+
+@router.post("/simulations/scenarios", response_model=ScenarioSummary, status_code=201)
+def create_scenario(lab: Lab, body: authoring.ScenarioDraft):
+    try:
+        scenario, _ = authoring.build_scenario(lab, body)
+    except (authoring.AuthoringError, ScenarioError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+    return _store_custom_scenario(lab, scenario)
+
+
+@router.post("/simulations/scenarios/import", response_model=ScenarioSummary, status_code=201)
+def import_scenario(lab: Lab, body: dict):
+    """Add a scenario shared as JSON (the format produced by the export endpoint)."""
+    try:
+        scenario = Scenario.model_validate({**body, "origin": "custom"})
+    except ValidationError as exc:
+        first = exc.errors()[0]
+        raise HTTPException(422, f"not a valid scenario: {'.'.join(str(p) for p in first['loc'])}: {first['msg']}") from exc
+    if len(scenario.steps) > authoring.MAX_SCENARIO_EVENTS:
+        raise HTTPException(422, f"scenario has more than {authoring.MAX_SCENARIO_EVENTS} steps")
+    if scenario.id in lab.builtin_scenarios:
+        scenario.id = f"custom-{scenario.id}"
+    try:
+        render(scenario, utcnow(), 1, dataset="validation")
+    except (ScenarioError, ValueError, KeyError) as exc:
+        raise HTTPException(422, f"scenario does not render: {exc}") from exc
+    return _store_custom_scenario(lab, scenario)
+
+
+@router.get("/simulations/scenarios/{scenario_id}/export")
+def export_scenario(lab: Lab, scenario_id: str):
+    scenario = lab.scenarios.get(scenario_id)
+    if scenario is None:
+        raise HTTPException(404, f"scenario {scenario_id} not found")
+    return JSONResponse(
+        scenario.model_dump(mode="json", exclude={"origin"}),
+        headers={"Content-Disposition": f'attachment; filename="{scenario.id}.json"'},
+    )
+
+
+@router.delete("/simulations/scenarios/{scenario_id}", status_code=204)
+def delete_scenario(lab: Lab, scenario_id: str):
+    with lab.store.lock:
+        if lab.store.custom_scenarios.get(scenario_id) is None:
+            raise HTTPException(409 if scenario_id in lab.scenarios else 404, "only custom scenarios can be deleted")
+        lab.store.custom_scenarios.remove(scenario_id)
+        lab.load_custom_content()
+        lab.regression_suite.forget(scenario_id)
+        lab.log("analyst", "scenario.deleted", f"Custom scenario {scenario_id} deleted", "scenario", scenario_id)
+        lab.store.persist_all()
 
 
 @router.post("/simulations/run")

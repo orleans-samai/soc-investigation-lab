@@ -20,4 +20,9 @@ export const GLOSSARY: Record<string, string> = {
   "Fail-safe import": "Files are parsed line by line; invalid lines are reported and skipped, never executed.",
   "Password spraying": "Trying a few common passwords against many accounts to stay under lockout thresholds.",
   "Brute force": "Many password guesses against the same account or host in a short period.",
+  "Regression test": "Replay every attack and benign scenario with the current rules and with your change: a change that loses an attack fails.",
+  Sigma: "An open, SIEM-neutral format for detection rules. Write once, convert to Splunk, Elastic, Sentinel and others.",
+  "Alert fatigue": "When most alerts are noise, analysts slow down and start missing real attacks. Shift mode trains against it.",
+  LGPD: "Lei Geral de Proteção de Dados, Brazil's data protection law. Incidents affecting personal data may have to be reported to the ANPD.",
+  PIX: "Brazil's instant payment system run by the Central Bank. Transfers settle in seconds, which is why account takeover fraud moves fast.",
 };

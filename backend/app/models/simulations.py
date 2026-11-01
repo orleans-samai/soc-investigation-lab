@@ -48,6 +48,9 @@ class Scenario(ApiModel):
     expected_severity: Severity
     expected_rules: list[str]
     benign: bool = False
+    # Ground truth for shift mode. Defaults to "benign" for benign scenarios and "malicious" otherwise.
+    verdict: Literal["malicious", "benign", "false_positive"] | None = None
+    tags: list[str] = Field(default_factory=list)
     # Force the run to start at this local wall-clock time ("HH:MM"), e.g. for after-hours scenarios.
     time_of_day_local: str | None = Field(default=None, pattern=r"^\d{2}:\d{2}$")
     # Registers an approved change ticket covering the run, so analysts can find the justification.
@@ -59,6 +62,12 @@ class Scenario(ApiModel):
     variables: dict[str, list[Any]] = Field(default_factory=dict)
     steps: list[ScenarioStep]
     challenge: list[ChallengeQuestion] = Field(default_factory=list)
+    # "builtin" ships with the lab; "custom" was authored in the lab (from imported logs or a shared file).
+    origin: Literal["builtin", "custom"] = "builtin"
+
+    @property
+    def expected_verdict(self) -> str:
+        return self.verdict or ("benign" if self.benign else "malicious")
 
 
 class ScenarioSummary(ApiModel):
@@ -71,6 +80,9 @@ class ScenarioSummary(ApiModel):
     expected_severity: Severity
     expected_rules: list[str]
     benign: bool
+    verdict: str = "malicious"
+    tags: list[str] = Field(default_factory=list)
+    origin: str = "builtin"
     mitre: list[str]
     hosts: list[str]
     learning_objectives: list[str]

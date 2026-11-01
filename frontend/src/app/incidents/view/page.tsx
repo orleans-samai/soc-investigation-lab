@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import useSWR from "swr";
 
 import { CLASSIFICATION_LABEL, ClassificationText, SeverityBadge, SeverityDot, StatusBadge } from "@/components/soc/badges";
-import { ErrorState, KeyValue, MitreChip, Term } from "@/components/soc/common";
+import { ErrorState, KeyValue, MitreChip, Segmented, Term } from "@/components/soc/common";
 import { EntityLink, useInvestigation } from "@/components/soc/investigation-context";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, Select } from "@/components/ui/overlays";
@@ -172,7 +172,7 @@ function IncidentPage() {
   if (!data) return <Skeleton className="h-[70vh] w-full" />;
   const { incident, alerts, events, activity, playbook } = data;
 
-  async function update(body: Partial<{ status: IncidentStatus; severity: Severity; assignee: string; title: string }>, message: string) {
+  async function update(body: Partial<{ status: IncidentStatus; severity: Severity; assignee: string; title: string; personal_data: boolean }>, message: string) {
     setBusy(true);
     try {
       await patch(`/incidents/${incident.id}`, body);
@@ -400,6 +400,30 @@ function IncidentPage() {
                     onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
                   />
                 </div>
+              </div>
+              <div className="space-y-1.5 border-t border-border pt-3">
+                <span className="block text-xs font-medium text-muted">
+                  Personal data affected? <Term name="LGPD">LGPD</Term>
+                </span>
+                <Segmented
+                  aria-label="Personal data affected"
+                  value={incident.personal_data === null ? "unknown" : incident.personal_data ? "yes" : "no"}
+                  onChange={(v) => v !== "unknown" && update({ personal_data: v === "yes" }, v === "yes" ? "Marked: personal data affected" : "Marked: no personal data")}
+                  options={[
+                    { value: "unknown", label: "Not assessed" },
+                    { value: "yes", label: "Yes" },
+                    { value: "no", label: "No" },
+                  ]}
+                />
+                {incident.personal_data && (
+                  <p className="text-2xs leading-relaxed text-muted">
+                    The ANPD and the data subjects must be notified within 3 business days (Resolução CD/ANPD nº 15/2024). Deadlines are in the{" "}
+                    <Link href={reportHref(incident.id)} className="text-primary hover:underline">
+                      report
+                    </Link>
+                    .
+                  </p>
+                )}
               </div>
             </div>
           </Panel>

@@ -29,7 +29,13 @@ class RuleConfig:
 class DetectionEngine:
     def __init__(self, context: DetectionContext, rules: list[Rule] | None = None):
         self.context = context
-        self.rules = rules or builtin_rules()
+        self._builtin = rules or builtin_rules()
+        self.rules = list(self._builtin)
+        self._by_id = {rule.id: rule for rule in self.rules}
+
+    def set_custom_rules(self, custom: list[Rule]) -> None:
+        """Replace the analyst-authored rules; built-in rules are always kept."""
+        self.rules = sorted(self._builtin + custom, key=lambda r: r.id)
         self._by_id = {rule.id: rule for rule in self.rules}
 
     def rule(self, rule_id: str) -> Rule | None:

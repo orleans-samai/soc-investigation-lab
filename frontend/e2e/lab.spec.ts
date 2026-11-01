@@ -85,3 +85,54 @@ test("import validates a malformed file line by line", async ({ page }) => {
   await page.getByRole("button", { name: /Import \d+ events/ }).click();
   await expect(page.getByText("Import complete")).toBeVisible();
 });
+
+test("regression test blocks a tuning change that loses an attack", async ({ page }) => {
+  await page.goto("/rules/?rule=LAB-002");
+  await page.getByRole("spinbutton", { name: "Failed attempts" }).fill("15");
+  await page.getByRole("button", { name: "Regression test" }).click();
+  const panel = page.getByRole("dialog");
+  await expect(panel.getByText(/Failed: 1 attack scenario/)).toBeVisible();
+  await expect(panel.getByRole("row", { name: /Password spraying/ })).toContainText("Regression");
+  await expect(panel.getByRole("row", { name: /Forgotten password/ })).toContainText("Less noise");
+});
+
+test("a Sigma rule written in the lab runs in the engine", async ({ page }) => {
+  await page.goto("/rules/");
+  await page.getByRole("button", { name: "New Sigma rule" }).click();
+  const editor = page.getByRole("dialog");
+  await editor.getByRole("button", { name: "Validate & dry-run" }).click();
+  await expect(editor.getByText(/Matches \d+ stored event/)).toBeVisible();
+  await editor.getByRole("button", { name: "Add to engine" }).click();
+  await expect(page.getByRole("button", { name: /^CUS-001 Encoded PowerShell/ })).toBeVisible();
+  await expect(page.getByText("custom").first()).toBeVisible();
+});
+
+test("shift mode scores a triaged queue", async ({ page }) => {
+  await page.goto("/shift/");
+  await page.getByRole("button", { name: "Start shift" }).click();
+  await expect(page.getByRole("timer", { name: "Time left in shift" })).toBeVisible();
+  await page.getByRole("radio", { name: /Malicious/ }).click();
+  await page.getByLabel("Justification").fill("Checked the source IP and the account timeline; escalated to IR.");
+  await page.getByRole("button", { name: "Submit verdict" }).click();
+  await expect(page.getByText(/1\/\d+ triaged/)).toBeVisible();
+  await page.getByRole("button", { name: "End shift" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "End shift" }).click();
+  await expect(page.getByText("Shift score")).toBeVisible();
+  await expect(page.getByRole("table")).toContainText(/Correct|Missed attack|Unnecessary escalation|Not triaged/);
+});
+
+test("events selected with a query become a scenario", async ({ page }) => {
+  await page.goto("/events/");
+  await page.getByRole("radio", { name: "Query language" }).click();
+  await page.getByRole("textbox", { name: "Query", exact: true }).fill("outcome:failure host:bastion-01");
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await page.getByRole("button", { name: "Save as scenario" }).click();
+  const sheet = page.getByRole("dialog");
+  await sheet.getByLabel("Name").fill("Bastion brute force replay");
+  await sheet.getByRole("button", { name: "Preview" }).click();
+  await expect(sheet.getByText("LAB-001").first()).toBeVisible();
+  await expect(sheet.getByRole("cell", { name: "host01" })).toBeVisible();
+  await sheet.getByRole("button", { name: "Save scenario" }).click();
+  await expect(page).toHaveURL(/simulations/);
+  await expect(page.getByRole("button", { name: /Bastion brute force replay/ })).toBeVisible();
+});

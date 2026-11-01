@@ -1,0 +1,309 @@
+{
+  "id": "pix-account-takeover",
+  "name": "Internet-banking account takeover and PIX fraud",
+  "summary": "Credential stuffing against the internet-banking portal: the attacker gets in from a new device, swaps the customer's phone number and drains the account through PIX.",
+  "narrative": "A customer uses the mobile app as usual in the morning. Later, a headless browser hosted on a VPS fails a few passwords for the same account and then signs in from a device never seen before. Within minutes the phone number on file is changed (so security SMS go to the attacker), a new payee is registered and two PIX transfers just under R$ 5,000 leave the account. This is the 'golpe da conta invadida' that Brazilian banks' fraud teams see daily.",
+  "category": "Fraud",
+  "level": "N2",
+  "expected_severity": "high",
+  "expected_rules": [
+    "LAB-018"
+  ],
+  "verdict": "malicious",
+  "tags": [
+    "Brazil",
+    "PIX",
+    "LGPD"
+  ],
+  "mitre": [
+    "T1110.004",
+    "T1078",
+    "T1098",
+    "T1657"
+  ],
+  "hosts": [
+    "ib-portal"
+  ],
+  "learning_objectives": [
+    "Read business-application audit logs, not only OS telemetry.",
+    "Recognise the account-takeover sequence: new device, contact change, new payee, transfer.",
+    "Know the response levers in Brazil: MED for PIX refunds and the LGPD notification to ANPD."
+  ],
+  "investigation_questions": [
+    "Which device and IP did the customer normally use, and which ones are new?",
+    "What did the attacker change before moving money, and why?",
+    "How much was transferred and to which key?",
+    "Which notifications (customer, ANPD) are required and by when?"
+  ],
+  "variables": {
+    "customer": [
+      "cli.ana.ribeiro",
+      "cli.bruno.lima",
+      "cli.carla.nunes"
+    ],
+    "customer_ip": [
+      "192.0.2.45",
+      "192.0.2.71",
+      "192.0.2.88"
+    ],
+    "usual_device": [
+      "dev-a1f3",
+      "dev-77c2",
+      "dev-5e0b"
+    ],
+    "attacker_ip": [
+      "203.0.113.141",
+      "203.0.113.152",
+      "203.0.113.163"
+    ],
+    "attacker_device": [
+      "dev-x9k2",
+      "dev-q4m8",
+      "dev-z7p1"
+    ],
+    "mule_key": [
+      "pagamentos.rapidos@mule.example",
+      "cobranca.express@mule.example",
+      "loja.premium.br@mule.example"
+    ]
+  },
+  "steps": [
+    {
+      "format": "normalized_json",
+      "offset_seconds": 0,
+      "record": {
+        "timestamp": "{ts}",
+        "event_source": "application",
+        "event_type": "authentication",
+        "event_action": "login_success",
+        "outcome": "success",
+        "hostname": "ib-portal",
+        "username": "{customer}",
+        "source_ip": "{customer_ip}",
+        "message": "Customer signed in to the mobile app",
+        "fields": {
+          "app": "internet-banking",
+          "device_id": "{usual_device}",
+          "user_agent": "BancoApp/8.4 (Android 14)",
+          "channel": "mobile"
+        },
+        "raw": "{\"ts\": \"{ts}\", \"app\": \"ib-portal\", \"action\": \"login_success\", \"customer\": \"{customer}\", \"ip\": \"{customer_ip}\", \"device_id\": \"{usual_device}\", \"user_agent\": \"BancoApp/8.4 (Android 14)\", \"channel\": \"mobile\"}"
+      }
+    },
+    {
+      "format": "normalized_json",
+      "offset_seconds": 140,
+      "record": {
+        "timestamp": "{ts}",
+        "event_source": "application",
+        "event_type": "transaction",
+        "event_action": "pix_transfer",
+        "outcome": "success",
+        "hostname": "ib-portal",
+        "username": "{customer}",
+        "source_ip": "{customer_ip}",
+        "message": "PIX sent to a known payee",
+        "fields": {
+          "app": "internet-banking",
+          "device_id": "{usual_device}",
+          "amount": "{amount}",
+          "recipient_key": "padaria.central@known.example",
+          "recipient_name": "Padaria Central"
+        },
+        "raw": "{\"ts\": \"{ts}\", \"app\": \"ib-portal\", \"action\": \"pix_transfer\", \"customer\": \"{customer}\", \"ip\": \"{customer_ip}\", \"device_id\": \"{usual_device}\", \"amount\": \"{amount}\", \"recipient_key\": \"padaria.central@known.example\", \"recipient_name\": \"Padaria Central\"}"
+      },
+      "random_int": {
+        "amount": [
+          20,
+          90
+        ]
+      }
+    },
+    {
+      "format": "normalized_json",
+      "offset_seconds": 5400,
+      "record": {
+        "timestamp": "{ts}",
+        "event_source": "application",
+        "event_type": "authentication",
+        "event_action": "login_failed",
+        "outcome": "failure",
+        "hostname": "ib-portal",
+        "username": "{customer}",
+        "source_ip": "{attacker_ip}",
+        "message": "Sign-in failed: wrong password",
+        "fields": {
+          "app": "internet-banking",
+          "device_id": "{attacker_device}",
+          "user_agent": "Mozilla/5.0 (X11; Linux x86_64) HeadlessChrome/129.0",
+          "channel": "web",
+          "reason": "wrong_password"
+        },
+        "raw": "{\"ts\": \"{ts}\", \"app\": \"ib-portal\", \"action\": \"login_failed\", \"customer\": \"{customer}\", \"ip\": \"{attacker_ip}\", \"device_id\": \"{attacker_device}\", \"user_agent\": \"Mozilla/5.0 (X11; Linux x86_64) HeadlessChrome/129.0\", \"channel\": \"web\", \"reason\": \"wrong_password\"}"
+      },
+      "repeat": 4,
+      "interval_seconds": [
+        18,
+        40
+      ]
+    },
+    {
+      "format": "normalized_json",
+      "offset_seconds": 5560,
+      "record": {
+        "timestamp": "{ts}",
+        "event_source": "application",
+        "event_type": "authentication",
+        "event_action": "login_success",
+        "outcome": "success",
+        "hostname": "ib-portal",
+        "username": "{customer}",
+        "source_ip": "{attacker_ip}",
+        "message": "Customer signed in from a new device",
+        "fields": {
+          "app": "internet-banking",
+          "device_id": "{attacker_device}",
+          "user_agent": "Mozilla/5.0 (X11; Linux x86_64) HeadlessChrome/129.0",
+          "channel": "web"
+        },
+        "raw": "{\"ts\": \"{ts}\", \"app\": \"ib-portal\", \"action\": \"login_success\", \"customer\": \"{customer}\", \"ip\": \"{attacker_ip}\", \"device_id\": \"{attacker_device}\", \"user_agent\": \"Mozilla/5.0 (X11; Linux x86_64) HeadlessChrome/129.0\", \"channel\": \"web\"}"
+      }
+    },
+    {
+      "format": "normalized_json",
+      "offset_seconds": 5640,
+      "record": {
+        "timestamp": "{ts}",
+        "event_source": "application",
+        "event_type": "account_management",
+        "event_action": "contact_changed",
+        "outcome": "success",
+        "hostname": "ib-portal",
+        "username": "{customer}",
+        "source_ip": "{attacker_ip}",
+        "message": "Phone number on file changed",
+        "fields": {
+          "app": "internet-banking",
+          "device_id": "{attacker_device}",
+          "field": "phone",
+          "old_value": "+55 11 9****-1234",
+          "new_value": "+55 21 9****-8870"
+        },
+        "raw": "{\"ts\": \"{ts}\", \"app\": \"ib-portal\", \"action\": \"contact_changed\", \"customer\": \"{customer}\", \"ip\": \"{attacker_ip}\", \"device_id\": \"{attacker_device}\", \"field\": \"phone\", \"old_value\": \"+55 11 9****-1234\", \"new_value\": \"+55 21 9****-8870\"}"
+      }
+    },
+    {
+      "format": "normalized_json",
+      "offset_seconds": 5710,
+      "record": {
+        "timestamp": "{ts}",
+        "event_source": "application",
+        "event_type": "account_management",
+        "event_action": "payee_added",
+        "outcome": "success",
+        "hostname": "ib-portal",
+        "username": "{customer}",
+        "source_ip": "{attacker_ip}",
+        "message": "New PIX payee registered",
+        "fields": {
+          "app": "internet-banking",
+          "device_id": "{attacker_device}",
+          "recipient_key": "{mule_key}",
+          "recipient_name": "JM Comercio Digital ME",
+          "recipient_bank": "Banco 999 (ficticio)"
+        },
+        "raw": "{\"ts\": \"{ts}\", \"app\": \"ib-portal\", \"action\": \"payee_added\", \"customer\": \"{customer}\", \"ip\": \"{attacker_ip}\", \"device_id\": \"{attacker_device}\", \"recipient_key\": \"{mule_key}\", \"recipient_name\": \"JM Comercio Digital ME\", \"recipient_bank\": \"Banco 999 (ficticio)\"}"
+      }
+    },
+    {
+      "format": "normalized_json",
+      "offset_seconds": 5770,
+      "record": {
+        "timestamp": "{ts}",
+        "event_source": "application",
+        "event_type": "transaction",
+        "event_action": "pix_transfer",
+        "outcome": "success",
+        "hostname": "ib-portal",
+        "username": "{customer}",
+        "source_ip": "{attacker_ip}",
+        "message": "PIX sent to a new payee",
+        "fields": {
+          "app": "internet-banking",
+          "device_id": "{attacker_device}",
+          "amount": "{amount}",
+          "recipient_key": "{mule_key}",
+          "recipient_name": "JM Comercio Digital ME"
+        },
+        "raw": "{\"ts\": \"{ts}\", \"app\": \"ib-portal\", \"action\": \"pix_transfer\", \"customer\": \"{customer}\", \"ip\": \"{attacker_ip}\", \"device_id\": \"{attacker_device}\", \"amount\": \"{amount}\", \"recipient_key\": \"{mule_key}\", \"recipient_name\": \"JM Comercio Digital ME\"}"
+      },
+      "repeat": 2,
+      "interval_seconds": [
+        45,
+        90
+      ],
+      "random_int": {
+        "amount": [
+          4200,
+          4950
+        ]
+      }
+    }
+  ],
+  "challenge": [
+    {
+      "id": "ip",
+      "question": "From which IP address did the attacker sign in?",
+      "answers": [
+        "{attacker_ip}"
+      ],
+      "points": 25,
+      "hint": "Compare the source IP of the login_success events: the customer's own address appears in the morning.",
+      "explanation": "The new-device login came from {attacker_ip}, a hosting address, after failed passwords from the same source."
+    },
+    {
+      "id": "device",
+      "question": "Which device ID did the attacker use?",
+      "answers": [
+        "{attacker_device}"
+      ],
+      "points": 25,
+      "hint": "The alert evidence lists the new device and the devices already known for the customer.",
+      "explanation": "{attacker_device} was never seen for {customer}, whose usual device is {usual_device}."
+    },
+    {
+      "id": "change",
+      "question": "What did the attacker change before moving money?",
+      "kind": "choice",
+      "options": [
+        "Phone number",
+        "E-mail address",
+        "Password",
+        "Transaction limit"
+      ],
+      "answers": [
+        "Phone number"
+      ],
+      "points": 25,
+      "hint": "Look at the contact_changed event.",
+      "explanation": "Swapping the phone number redirects security SMS and token pushes to the attacker."
+    },
+    {
+      "id": "anpd",
+      "question": "Customer personal data was exposed to a third party. Under Resolução CD/ANPD nº 15/2024, how long does the controller have to notify the ANPD?",
+      "kind": "choice",
+      "options": [
+        "24 hours",
+        "72 hours",
+        "3 business days",
+        "30 days"
+      ],
+      "answers": [
+        "3 business days"
+      ],
+      "points": 25,
+      "hint": "The Brazilian regulation counts business days (dias úteis), not hours like the GDPR.",
+      "explanation": "Art. 6 of the Security Incident Reporting Regulation: three business days from learning that the incident affected personal data, with complementary information within 20 business days. Small processing agents get double the time."
+    }
+  ]
+}

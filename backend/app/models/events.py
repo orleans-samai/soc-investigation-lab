@@ -15,6 +15,8 @@ class EventSource(StrEnum):
     windows_powershell = "windows_powershell"
     windows_sysmon = "windows_sysmon"
     linux_auth = "linux_auth"
+    # Business application audit log (e.g. an internet-banking portal), imported as normalized JSON.
+    application = "application"
     internal = "internal"
 
 
@@ -28,6 +30,7 @@ class EventType(StrEnum):
     audit = "audit"
     network = "network"
     file = "file"
+    transaction = "transaction"
     other = "other"
 
 

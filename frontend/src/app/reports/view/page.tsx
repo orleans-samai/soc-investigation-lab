@@ -215,7 +215,37 @@ function ReportPage() {
           </ol>
         </Section>
 
-        <Section n={9} title="Analyst notes & resolution">
+        <Section n={9} title="LGPD notification">
+          {r.lgpd.personal_data ? (
+            <div className="space-y-2 text-sm">
+              <p>
+                Personal data was affected. The SOC became aware on <strong>{formatTs(r.lgpd.aware_at, { seconds: false })}</strong> (first detection).
+              </p>
+              <ul className="list-disc space-y-1 pl-5">
+                <li>
+                  Notify the ANPD and the data subjects by <strong className="font-mono">{r.lgpd.anpd_deadline}</strong> (3 business days).
+                </li>
+                <li>
+                  Complement the communication by <strong className="font-mono">{r.lgpd.complement_deadline}</strong> (20 business days).
+                </li>
+              </ul>
+              <p className="text-xs text-muted">Basis: {r.lgpd.basis}.</p>
+              <ul className="list-disc space-y-0.5 pl-5 text-xs text-muted">
+                {r.lgpd.notes.map((n) => (
+                  <li key={n}>{n}</li>
+                ))}
+              </ul>
+            </div>
+          ) : r.lgpd.personal_data === false ? (
+            <p className="text-sm text-muted">Assessed: no personal data affected; no ANPD communication required.</p>
+          ) : (
+            <p className="text-sm text-muted">
+              Not assessed yet{r.lgpd.suggested ? ": customer data was involved in this incident, assess it on the incident page." : "."}
+            </p>
+          )}
+        </Section>
+
+        <Section n={10} title="Analyst notes & resolution">
           {r.notes.length ? (
             <ul className="space-y-2 text-sm">
               {r.notes.map((n) => (

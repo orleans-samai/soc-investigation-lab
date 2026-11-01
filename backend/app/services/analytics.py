@@ -238,6 +238,12 @@ def metrics(lab: LabService) -> dict[str, Any]:
             "techniques_in_catalog": len(lab.mitre.techniques),
             "techniques_detected": len({m.technique_id for a in alerts for m in a.mitre}),
         },
+        "shifts": [
+            {"id": s.id, "started_at": s.started_at, "alerts": len(s.items), **s.score.model_dump()}
+            for s in sorted(lab.store.shifts.all(), key=lambda s: s.started_at)
+            if s.score
+        ],
+        "last_regression": lab.store.rules.meta.get("last_regression"),
     }
 
 

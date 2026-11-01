@@ -427,6 +427,36 @@ def _office(rule, p, _):
     ]
 
 
+BANKING_APP = {"product": "application", "service": "internet_banking"}
+
+
+def _pix_takeover(rule, p, _):
+    login = _base(rule, "soclab_ib_login_new_device", "Internet Banking Login", BANKING_APP,
+                  {"selection": {"action": "login_success"}, "condition": "selection"}, ["user", "src_ip", "device_id"],
+                  {"notes": ["'New device' needs the customer's device history: enrich device_id with a first-seen lookup in the pipeline."]})  # fmt: skip
+    change = _base(rule, "soclab_ib_account_change", "Internet Banking Contact or Payee Change", BANKING_APP,
+                   {"selection": {"action": ["contact_changed", "pix_key_registered", "payee_added"]}, "condition": "selection"},
+                   ["user", "recipient_key"])  # fmt: skip
+    transfer = _base(rule, "soclab_ib_pix_transfer", "PIX Transfer Above Threshold", BANKING_APP,
+                     {"selection": {"action": "pix_transfer", "amount|gte": p["min_amount"]}, "condition": "selection"},
+                     ["user", "amount", "recipient_key"])  # fmt: skip
+    ordered = _correlation(rule, "soclab_pix_account_takeover", "temporal_ordered", [login["name"], change["name"], transfer["name"]],
+                           ["user"], p["window_minutes"], {}, rule.name)  # fmt: skip
+    return [login, change, transfer, ordered]
+
+
+def _custom(rule: Rule, p: dict[str, int]) -> list[dict[str, Any]]:
+    """Analyst-written rules export their own YAML, with tuned thresholds written back."""
+    docs = [d for d in yaml.safe_load_all(rule.source) if isinstance(d, dict)]  # type: ignore[attr-defined]
+    for doc in docs:
+        corr = doc.get("correlation")
+        if isinstance(corr, dict) and p:
+            corr["timespan"] = f"{p['window_minutes']}m"
+            cond = {k: v for k, v in (corr.get("condition") or {}).items() if k not in {"gt", "gte"}}
+            corr["condition"] = {**cond, "gte": p["threshold"]}
+    return docs
+
+
 BUILDERS: dict[str, Builder] = {
     "LAB-001": _ssh_brute,
     "LAB-002": _win_brute,
@@ -445,10 +475,13 @@ BUILDERS: dict[str, Builder] = {
     "LAB-015": _lsass,
     "LAB-016": _intel,
     "LAB-017": _office,
+    "LAB-018": _pix_takeover,
 }
 
 
 def rule_documents(rule: Rule, params: dict[str, int], feed: ThreatIntelFeed | None) -> list[dict[str, Any]]:
+    if rule.custom:
+        return _custom(rule, params)
     builder = BUILDERS.get(rule.id)
     return builder(rule, params, feed) if builder else []
 

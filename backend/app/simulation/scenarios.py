@@ -21,7 +21,12 @@ from app.models.imports import LogFormat
 from app.models.simulations import Scenario
 from app.parsers import PARSERS, ParseOptions
 
-_PLACEHOLDER = re.compile(r"\{(\w+)\}")
+# {name} is a variable; {{ and }} are literal braces (as in str.format), used by scenarios built from real logs.
+_PLACEHOLDER = re.compile(r"\{\{|\}\}|\{(\w+)\}")
+
+
+def escape(text: str) -> str:
+    return text.replace("{", "{{").replace("}", "}}")
 
 
 class ScenarioError(ValueError):
@@ -55,6 +60,8 @@ def _substitute(value: Any, variables: dict[str, Any]) -> Any:
     if isinstance(value, str):
 
         def repl(match: re.Match[str]) -> str:
+            if match.group(1) is None:
+                return match.group(0)[0]
             name = match.group(1)
             if name not in variables:
                 raise ScenarioError(f"unknown placeholder {{{name}}}")

@@ -5,6 +5,7 @@ import {
   ChartNoAxesColumn,
   FileText,
   FlaskConical,
+  Timer,
   Grid3x3,
   LayoutDashboard,
   ScrollText,
@@ -57,6 +58,7 @@ export const NAV: NavGroup[] = [
     items: [
       { href: "/alerts", label: "Alerts", icon: BellRing, count: (s) => s.counts.open_alerts },
       { href: "/incidents", label: "Incidents", icon: ShieldCheck, count: (s) => s.counts.open_incidents },
+      { href: "/shift", label: "Shift", icon: Timer, count: (s) => (s.counts.active_shift ? "live" : undefined) },
     ],
   },
   {

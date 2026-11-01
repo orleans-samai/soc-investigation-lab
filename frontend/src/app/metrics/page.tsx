@@ -74,6 +74,85 @@ export default function MetricsPage() {
             </Panel>
           </div>
 
+          <div className="grid gap-4 xl:grid-cols-2">
+            <Panel className="overflow-hidden">
+              <PanelHeader
+                title="Shift scores"
+                description="Triage accuracy under time pressure"
+                actions={
+                  <Link href="/shift" className="text-xs text-primary hover:underline">
+                    Start a shift
+                  </Link>
+                }
+              />
+              {m.shifts.length === 0 ? (
+                <p className="p-4 text-sm text-muted">No shift completed yet. A shift mixes attacks with noise and scores every verdict.</p>
+              ) : (
+                <table className={tableCls.table}>
+                  <thead className={tableCls.head}>
+                    <tr>
+                      <th className={tableCls.th}>Shift</th>
+                      <th className={cn(tableCls.th, "text-right")}>Score</th>
+                      <th className={cn(tableCls.th, "text-right")}>Accuracy</th>
+                      <th className={cn(tableCls.th, "text-right")}>Speed</th>
+                      <th className={cn(tableCls.th, "text-right")}>Notes</th>
+                      <th className={cn(tableCls.th, "text-right")}>Missed attacks</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...m.shifts].reverse().slice(0, 8).map((s) => (
+                      <tr key={s.id} className={tableCls.row}>
+                        <td className={tableCls.td}>
+                          <Link href={`/shift?id=${s.id}`} className="font-mono text-xs text-primary hover:underline">
+                            {formatShortDate(s.started_at)}
+                          </Link>
+                          <span className="ml-2 text-2xs text-subtle">{s.alerts} alerts</span>
+                        </td>
+                        {[s.total, s.accuracy, s.speed, s.documentation].map((v, i) => (
+                          <td key={i} className={cn(tableCls.td, "text-right font-mono text-xs tabular-nums", i === 0 && "font-semibold")}>
+                            {v}
+                            {i > 0 && "%"}
+                          </td>
+                        ))}
+                        <td className={cn(tableCls.td, "text-right font-mono text-xs tabular-nums", s.missed_attacks && "text-critical")}>{s.missed_attacks}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </Panel>
+            <Panel>
+              <PanelHeader
+                title={<Term name="Regression test">Last regression test</Term>}
+                description="Replays every scenario against the rules"
+                actions={
+                  <Link href="/rules" className="text-xs text-primary hover:underline">
+                    Run it
+                  </Link>
+                }
+              />
+              {m.last_regression ? (
+                <div className="space-y-3 p-4">
+                  <p className="flex items-center gap-2 text-sm font-medium">
+                    <span className={cn("size-2 rounded-full", m.last_regression.passed ? "bg-success" : "bg-critical")} aria-hidden />
+                    {m.last_regression.passed ? "Passed" : `Failed: ${m.last_regression.regressions} regression(s)`}
+                    <span className="text-xs font-normal text-subtle">
+                      {m.last_regression.changes.length ? `testing ${m.last_regression.changes.join(", ")}` : "current rules"} ·{" "}
+                      {formatShortDate(m.last_regression.generated_at)}
+                    </span>
+                  </p>
+                  <div className="grid grid-cols-3 gap-px overflow-hidden rounded-md border border-border bg-border">
+                    <Stat label="Attacks detected" value={`${m.last_regression.detected_after}/${m.last_regression.attack_scenarios}`} />
+                    <Stat label="Noise alerts" value={`${m.last_regression.noise_before} → ${m.last_regression.noise_after}`} />
+                    <Stat label="Fixes" value={m.last_regression.fixes} />
+                  </div>
+                </div>
+              ) : (
+                <p className="p-4 text-sm text-muted">Not run yet. Use it before saving a tuning change to prove no attack is lost.</p>
+              )}
+            </Panel>
+          </div>
+
           <Panel className="overflow-hidden">
             <PanelHeader title="Per-rule performance" description="Use this to decide which rules need tuning (low precision) or more coverage" />
             <div className="overflow-x-auto">

@@ -101,6 +101,7 @@ export interface Incident {
   last_seen: string;
   notes: Note[];
   resolution: string | null;
+  personal_data: boolean | null;
   created_at: string;
   updated_at: string;
   acknowledged_at: string | null;
@@ -139,8 +140,55 @@ export interface RuleInfo {
   logic: string;
   false_positives: string[];
   response: string[];
+  custom: boolean;
+  source: string | null;
   alert_count: number;
   last_triggered: string | null;
+}
+
+export interface SigmaPreview {
+  rule: Pick<RuleInfo, "id" | "name" | "severity" | "rule_type" | "data_sources" | "mitre" | "logic" | "params">;
+  matched_events: number;
+  alert_count: number;
+  sample: { timestamp: string; severity: Severity; hostname: string | null; username: string | null; source_ip: string | null; reason: string }[];
+}
+
+export type Verdict = "malicious" | "benign" | "false_positive";
+
+export interface RuleChange {
+  enabled?: boolean;
+  params?: Record<string, number>;
+}
+
+export type RegressionStatus = "detected" | "missed" | "regressed" | "fixed" | "noise_reduced" | "noise_added" | "unchanged";
+
+export interface RegressionReport {
+  generated_at: string;
+  seeds: number[];
+  changes: Record<string, RuleChange>;
+  passed: boolean;
+  summary: {
+    attack_scenarios: number;
+    detected_before: number;
+    detected_after: number;
+    regressions: number;
+    fixes: number;
+    noise_before: number;
+    noise_after: number;
+  };
+  scenarios: {
+    scenario_id: string;
+    name: string;
+    verdict: Verdict;
+    origin: "builtin" | "custom";
+    expected_rules: string[];
+    missed_before: string[];
+    missed_after: string[];
+    alerts_before: number;
+    alerts_after: number;
+    status: RegressionStatus;
+  }[];
+  baseline: { rule_id: string; before: number; after: number }[];
 }
 
 export interface BacktestResult {
@@ -161,6 +209,9 @@ export interface ScenarioSummary {
   expected_severity: Severity;
   expected_rules: string[];
   benign: boolean;
+  verdict: Verdict;
+  tags: string[];
+  origin: "builtin" | "custom";
   mitre: string[];
   hosts: string[];
   learning_objectives: string[];
@@ -367,6 +418,16 @@ export interface IncidentReport {
   iocs: { type: string; value: string; context: string }[];
   evidence: { event_ref: string; timestamp: string; source: string; event_id: string | null; raw: string }[];
   recommendations: string[];
+  lgpd: {
+    personal_data: boolean | null;
+    suggested: boolean;
+    aware_at: string;
+    anpd_deadline: string;
+    subjects_deadline: string;
+    complement_deadline: string;
+    basis: string;
+    notes: string[];
+  };
   notes: Note[];
 }
 
@@ -421,6 +482,68 @@ export interface Metrics {
     per_scenario: { scenario_id: string; name: string; runs: number; detected_runs: number; last_missed: string[]; expected_rules: string[] }[];
   };
   mitre: { techniques_covered: number; techniques_in_catalog: number; techniques_detected: number };
+  shifts: ({ id: string; started_at: string; alerts: number } & ShiftScore)[];
+  last_regression: ({ generated_at: string; passed: boolean; changes: string[] } & RegressionReport["summary"]) | null;
+}
+
+export interface ShiftScore {
+  total: number;
+  accuracy: number;
+  speed: number;
+  documentation: number;
+  decided: number;
+  correct: number;
+  missed_attacks: number;
+  wasted_escalations: number;
+}
+
+export interface ShiftQueueItem {
+  alert_id: string;
+  verdict: Verdict | null;
+  note: string | null;
+  seconds_to_decide: number | null;
+  sla_seconds: number | null;
+  alert: Alert;
+  // Revealed when the shift has finished.
+  truth?: Verdict;
+  scenario_id?: string;
+  scenario_name?: string;
+  run_id?: string;
+  accuracy_points?: number;
+  speed_points?: number;
+  note_points?: number;
+  feedback?: string;
+}
+
+export interface ShiftView {
+  id: string;
+  status: "active" | "finished";
+  started_at: string;
+  ends_at: string;
+  finished_at: string | null;
+  duration_minutes: number;
+  now: string;
+  score: ShiftScore | null;
+  max_points_per_alert: { accuracy: number; speed: number; note: number };
+  queue: ShiftQueueItem[];
+}
+
+export interface ShiftSummary {
+  id: string;
+  status: "active" | "finished";
+  started_at: string;
+  ends_at: string;
+  duration_minutes: number;
+  alerts: number;
+  score: ShiftScore | null;
+}
+
+export interface ScenarioPreview {
+  scenario: ScenarioSummary & { expected_rules: string[]; expected_severity: Severity };
+  event_count: number;
+  duration_seconds: number;
+  pseudonyms: { kind: "account" | "host" | "ip"; original: string; pseudonym: string }[];
+  sample: Record<string, unknown>[];
 }
 
 export interface ChallengeQuestionView {

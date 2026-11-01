@@ -21,11 +21,12 @@ from typing import Any, Literal, Protocol
 
 from pydantic import BaseModel
 
-from app.models.alerts import Alert, RuleOverride
+from app.models.alerts import Alert, CustomRuleRecord, RuleOverride
 from app.models.events import NormalizedEvent
 from app.models.imports import ImportRecord
 from app.models.incidents import Activity, Incident
-from app.models.simulations import SimulationRun
+from app.models.shifts import Shift
+from app.models.simulations import Scenario, SimulationRun
 from app.storage.json_store import JsonCollectionFile, LoadResult
 from app.storage.sqlite_store import SqliteDocumentStore
 
@@ -199,11 +200,19 @@ class LabStore:
         self.imports: Collection[ImportRecord] = Collection(b, "imports", ImportRecord)
         self.simulation_runs: Collection[SimulationRun] = Collection(b, "simulation_runs", SimulationRun)
         self.rules: Collection[RuleOverride] = Collection(b, "rules", RuleOverride)
+        self.shifts: Collection[Shift] = Collection(b, "shifts", Shift)
+        # Authored content (rules and scenarios) survives a lab reset, like code survives a database wipe.
+        self.custom_rules: Collection[CustomRuleRecord] = Collection(b, "custom_rules", CustomRuleRecord)
+        self.custom_scenarios: Collection[Scenario] = Collection(b, "custom_scenarios", Scenario)
         self.migrated_from_json = False
 
     @property
     def collections(self) -> list[Collection[Any]]:
-        return [self.events, self.alerts, self.incidents, self.activity, self.imports, self.simulation_runs, self.rules]
+        return [*self.lab_state, self.custom_rules, self.custom_scenarios]
+
+    @property
+    def lab_state(self) -> list[Collection[Any]]:
+        return [self.events, self.alerts, self.incidents, self.activity, self.imports, self.simulation_runs, self.rules, self.shifts]
 
     @property
     def recovered_collections(self) -> list[str]:
@@ -239,7 +248,7 @@ class LabStore:
         return bool(self.events.meta.get("initialized"))
 
     def clear(self) -> None:
-        for collection in self.collections:
+        for collection in self.lab_state:
             collection.clear()
 
     def close(self) -> None:

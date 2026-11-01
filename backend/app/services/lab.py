@@ -18,6 +18,7 @@ from app.detection.base import DetectionContext
 from app.detection.engine import DetectionEngine, RuleConfig
 from app.detection.inventory import Inventory, MaintenanceWindow
 from app.detection.mitre import MitreCatalog
+from app.detection.sigma_rules import SigmaError, SigmaRule
 from app.detection.threat_intel import ThreatIntelFeed
 from app.models.alerts import Alert, AlertStatus, RuleOverride
 from app.models.common import MitreRef, Severity, utcnow
@@ -73,14 +74,17 @@ class LabService:
         )
         self.engine = DetectionEngine(self.context)
         self.mitre = MitreCatalog.load(settings.data_dir / "mitre_attack.json")
-        self.scenarios = load_scenarios(settings.scenarios_dir)
+        self.builtin_scenarios = load_scenarios(settings.scenarios_dir)
+        self.scenarios = dict(self.builtin_scenarios)
         self.store = LabStore(settings.state_dir, settings.storage_backend)
+        self._regression_suite = None
 
     # ------------------------------------------------------------------ lifecycle
     def startup(self) -> None:
         with self.store.lock:
             self.store.load()
             self._sync_maintenance_windows()
+            self.load_custom_content()
             if not self.store.is_initialized():
                 self.reset()
 
@@ -105,6 +109,33 @@ class LabService:
                 return [NormalizedEvent.model_validate(e) for e in json.load(fh)["events"]]
         log.warning("seed file missing; generating baseline in memory")
         return generate_baseline()
+
+    # ------------------------------------------------------------------ authored content
+    def mitre_lookup(self, technique_id: str) -> tuple[str, str] | None:
+        technique = self.mitre.technique(technique_id)
+        return (technique.name, technique.tactics[0]) if technique else None
+
+    def compile_sigma(self, rule_id: str, source: str) -> SigmaRule:
+        return SigmaRule(rule_id, source, self.mitre_lookup)
+
+    def load_custom_content(self) -> None:
+        """Compile stored Sigma rules into the engine and merge authored scenarios with the built-in ones."""
+        compiled = []
+        for record in self.store.custom_rules.all():
+            try:
+                compiled.append(self.compile_sigma(record.id, record.source))
+            except SigmaError:
+                log.exception("custom rule %s no longer compiles; skipped", record.id)
+        self.engine.set_custom_rules(compiled)
+        self.scenarios = {**self.builtin_scenarios, **{s.id: s for s in self.store.custom_scenarios.all()}}
+
+    @property
+    def regression_suite(self):
+        from app.services.regression import RegressionSuite  # Imported lazily: regression depends on this module.
+
+        if self._regression_suite is None:
+            self._regression_suite = RegressionSuite(self)
+        return self._regression_suite
 
     def _sync_maintenance_windows(self) -> None:
         dynamic = [MaintenanceWindow.model_validate(w) for w in self.store.simulation_runs.meta.get("maintenance_windows", [])]

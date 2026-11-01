@@ -99,3 +99,15 @@ user can do on the page. Buttons say what happens ("Run a scenario", "Close inci
 * `SeverityBadge` and `StatusBadge` redrawn; `Tag` no longer fills.
 * KPI grid on the Overview replaced by `SignalChain`; the simulation result reuses it (`compact`).
 * Primary button moved from `bg-primary` to the `action` token so blue text and blue fills can differ in contrast.
+
+## Purple-team surfaces (differentiation release)
+
+* **Regression report** (`soc/regression-report.tsx`) - the gate verdict sits first (one line, `success` or `critical` wash), then
+  four before/after figures, then the per-scenario table. A change is shown as `before → after` with the old value struck through;
+  the new value turns `success` only when it moved in the good direction (more attacks, less noise). A failed gate is the one
+  non-severity use of `critical`, the same as destructive buttons: it means "this would let an attack through".
+* **Shift** (`app/shift/page.tsx`) - the countdown is the page's only display-size figure; it turns `critical` in the last minute.
+  The queue reuses the rules list pattern (selected row = inset primary bar). Verdicts are three large radio cards, not a select,
+  because the choice is the whole task.
+* **Sigma editor** and **scenario builder** open as sheets (`max-w-3xl`) from the page that owns the data, validate before they
+  save (the save button stays disabled until a dry-run/preview succeeds) and show errors inline in a `critical/8` box, not as toasts.

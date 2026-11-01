@@ -97,7 +97,7 @@ export default function SettingsPage() {
             <PanelHeader title="Danger zone" />
             <div className="space-y-3 p-4">
               <p className="text-sm text-muted">
-                Reset the lab to the seed dataset. Imported logs, simulation runs, alerts, incidents, notes and rule tuning are permanently discarded.
+                Reset the lab to the seed dataset. Imported logs, simulation runs, shifts, alerts, incidents, notes and rule tuning are permanently discarded. Your Sigma rules and custom scenarios are kept.
               </p>
               <ConfirmDialog
                 title="Reset the whole lab?"

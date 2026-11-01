@@ -75,6 +75,19 @@ try {
     await page.getByRole("tab", { name: "Sigma rule" }).click();
   });
   await shot("report", `/reports/view/?id=${incident}`);
+  await shot("regression", "/rules/?rule=LAB-002", async () => {
+    await page.getByRole("spinbutton", { name: "Failed attempts" }).fill("15");
+    await page.getByRole("button", { name: "Regression test" }).click();
+    await page.getByText(/Failed: 1 attack scenario/).waitFor();
+  });
+  // Seed 2 queues both PIX scenarios (the fraud and the verified phone swap) next to an SSH attack and a maintenance window.
+  await api("/shifts", { duration_minutes: 20, seed: 2 });
+  await shot("shift", "/shift/", async () => {
+    await page.getByRole("timer").waitFor();
+    await page.getByRole("button", { name: /Account Takeover Followed by PIX Transfer/ }).last().click();
+    await page.getByRole("radio", { name: /Malicious/ }).click();
+    await page.getByLabel("Justification").fill("Hosting IP signed in from a never-seen device and swapped the phone before the PIX.");
+  });
   await browser.close();
 } finally {
   server.kill();

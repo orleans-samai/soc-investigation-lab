@@ -1,0 +1,220 @@
+{
+  "id": "pix-new-phone-verified",
+  "name": "New phone, verified by the call centre (benign)",
+  "summary": "A customer replaces a stolen phone, is verified by the call centre and pays a relative from the new device the same day.",
+  "narrative": "The account-takeover rule fires: new device, new payee and a large PIX within minutes. But just before the login the call centre recorded a successful identity verification with facial biometrics. The goal is to find that context, close the alert as benign and suggest how the rule could use it.",
+  "category": "False Positive Training",
+  "level": "N1",
+  "expected_severity": "high",
+  "expected_rules": [
+    "LAB-018"
+  ],
+  "benign": true,
+  "verdict": "benign",
+  "tags": [
+    "Brazil",
+    "PIX"
+  ],
+  "mitre": [
+    "T1078"
+  ],
+  "hosts": [
+    "ib-portal"
+  ],
+  "learning_objectives": [
+    "Look for out-of-band verification before escalating a fraud alert.",
+    "Document a benign true positive and propose rule tuning."
+  ],
+  "investigation_questions": [
+    "Did anything verify the customer's identity before the new-device login?",
+    "Is the payee consistent with the customer's profile?"
+  ],
+  "variables": {
+    "customer": [
+      "cli.diego.alves",
+      "cli.elisa.moura",
+      "cli.fabio.castro"
+    ],
+    "customer_ip": [
+      "192.0.2.104",
+      "192.0.2.117",
+      "192.0.2.130"
+    ],
+    "usual_device": [
+      "dev-b2c4",
+      "dev-c8d1",
+      "dev-d3e9"
+    ],
+    "new_device": [
+      "dev-n1w2",
+      "dev-n5w8",
+      "dev-n9w3"
+    ]
+  },
+  "steps": [
+    {
+      "format": "normalized_json",
+      "offset_seconds": 0,
+      "record": {
+        "timestamp": "{ts}",
+        "event_source": "application",
+        "event_type": "authentication",
+        "event_action": "login_success",
+        "outcome": "success",
+        "hostname": "ib-portal",
+        "username": "{customer}",
+        "source_ip": "{customer_ip}",
+        "message": "Customer signed in to the mobile app",
+        "fields": {
+          "app": "internet-banking",
+          "device_id": "{usual_device}",
+          "user_agent": "BancoApp/8.4 (iOS 17)",
+          "channel": "mobile"
+        },
+        "raw": "{\"ts\": \"{ts}\", \"app\": \"ib-portal\", \"action\": \"login_success\", \"customer\": \"{customer}\", \"ip\": \"{customer_ip}\", \"device_id\": \"{usual_device}\", \"user_agent\": \"BancoApp/8.4 (iOS 17)\", \"channel\": \"mobile\"}"
+      }
+    },
+    {
+      "format": "normalized_json",
+      "offset_seconds": 3600,
+      "record": {
+        "timestamp": "{ts}",
+        "event_source": "application",
+        "event_type": "authentication",
+        "event_action": "identity_verified",
+        "outcome": "success",
+        "hostname": "ib-portal",
+        "username": "{customer}",
+        "source_ip": "10.40.0.12",
+        "message": "Identity verified by the call centre (facial biometrics)",
+        "fields": {
+          "app": "internet-banking",
+          "channel": "call_center",
+          "method": "facial_biometrics",
+          "agent": "atendente-0412",
+          "ticket": "ATD-58{i}21"
+        },
+        "raw": "{\"ts\": \"{ts}\", \"app\": \"ib-portal\", \"action\": \"identity_verified\", \"customer\": \"{customer}\", \"ip\": \"10.40.0.12\", \"channel\": \"call_center\", \"method\": \"facial_biometrics\", \"agent\": \"atendente-0412\", \"ticket\": \"ATD-58{i}21\"}"
+      }
+    },
+    {
+      "format": "normalized_json",
+      "offset_seconds": 3720,
+      "record": {
+        "timestamp": "{ts}",
+        "event_source": "application",
+        "event_type": "authentication",
+        "event_action": "login_success",
+        "outcome": "success",
+        "hostname": "ib-portal",
+        "username": "{customer}",
+        "source_ip": "{customer_ip}",
+        "message": "Customer signed in from a new device",
+        "fields": {
+          "app": "internet-banking",
+          "device_id": "{new_device}",
+          "user_agent": "BancoApp/8.4 (iOS 18)",
+          "channel": "mobile"
+        },
+        "raw": "{\"ts\": \"{ts}\", \"app\": \"ib-portal\", \"action\": \"login_success\", \"customer\": \"{customer}\", \"ip\": \"{customer_ip}\", \"device_id\": \"{new_device}\", \"user_agent\": \"BancoApp/8.4 (iOS 18)\", \"channel\": \"mobile\"}"
+      }
+    },
+    {
+      "format": "normalized_json",
+      "offset_seconds": 3800,
+      "record": {
+        "timestamp": "{ts}",
+        "event_source": "application",
+        "event_type": "account_management",
+        "event_action": "payee_added",
+        "outcome": "success",
+        "hostname": "ib-portal",
+        "username": "{customer}",
+        "source_ip": "{customer_ip}",
+        "message": "New PIX payee registered",
+        "fields": {
+          "app": "internet-banking",
+          "device_id": "{new_device}",
+          "recipient_key": "+55 11 9****-4410",
+          "recipient_name": "Maria Alves (mae)",
+          "recipient_bank": "Banco 001 (ficticio)"
+        },
+        "raw": "{\"ts\": \"{ts}\", \"app\": \"ib-portal\", \"action\": \"payee_added\", \"customer\": \"{customer}\", \"ip\": \"{customer_ip}\", \"device_id\": \"{new_device}\", \"recipient_key\": \"+55 11 9****-4410\", \"recipient_name\": \"Maria Alves (mae)\", \"recipient_bank\": \"Banco 001 (ficticio)\"}"
+      }
+    },
+    {
+      "format": "normalized_json",
+      "offset_seconds": 3860,
+      "record": {
+        "timestamp": "{ts}",
+        "event_source": "application",
+        "event_type": "transaction",
+        "event_action": "pix_transfer",
+        "outcome": "success",
+        "hostname": "ib-portal",
+        "username": "{customer}",
+        "source_ip": "{customer_ip}",
+        "message": "PIX sent to a new payee",
+        "fields": {
+          "app": "internet-banking",
+          "device_id": "{new_device}",
+          "amount": "{amount}",
+          "recipient_key": "+55 11 9****-4410",
+          "recipient_name": "Maria Alves (mae)"
+        },
+        "raw": "{\"ts\": \"{ts}\", \"app\": \"ib-portal\", \"action\": \"pix_transfer\", \"customer\": \"{customer}\", \"ip\": \"{customer_ip}\", \"device_id\": \"{new_device}\", \"amount\": \"{amount}\", \"recipient_key\": \"+55 11 9****-4410\", \"recipient_name\": \"Maria Alves (mae)\"}"
+      },
+      "random_int": {
+        "amount": [
+          1200,
+          1800
+        ]
+      }
+    }
+  ],
+  "challenge": [
+    {
+      "id": "verification",
+      "question": "Which event shows the customer's identity was verified before the new-device login?",
+      "kind": "choice",
+      "options": [
+        "identity_verified",
+        "contact_changed",
+        "login_failed",
+        "payee_added"
+      ],
+      "answers": [
+        "identity_verified"
+      ],
+      "points": 35,
+      "hint": "Filter the customer's events by channel = call_center.",
+      "explanation": "The call centre verified the customer with facial biometrics about two minutes before the login from the new phone."
+    },
+    {
+      "id": "classification",
+      "question": "How should the alert be classified?",
+      "kind": "choice",
+      "options": [
+        "True positive (malicious)",
+        "Benign true positive",
+        "False positive"
+      ],
+      "answers": [
+        "Benign true positive"
+      ],
+      "points": 35,
+      "hint": "The rule matched exactly what it looks for; the question is whether the activity was authorised.",
+      "explanation": "The behaviour the rule describes really happened, but it was the verified customer: benign true positive."
+    },
+    {
+      "id": "device",
+      "question": "What is the new device ID?",
+      "answers": [
+        "{new_device}"
+      ],
+      "points": 30,
+      "hint": "It is in the alert evidence.",
+      "explanation": "{new_device} replaced {usual_device}."
+    }
+  ]
+}

@@ -101,6 +101,9 @@ def update_incident(lab: Lab, incident_id: str, body: IncidentUpdate):
         if body.severity and body.severity != incident.severity:
             changes.append(f"severity {incident.severity.value} -> {body.severity.value}")
             incident.severity = body.severity
+        if body.personal_data is not None and body.personal_data != incident.personal_data:
+            incident.personal_data = body.personal_data
+            changes.append("personal data involved (LGPD)" if body.personal_data else "no personal data involved")
         if body.resolution is not None:
             incident.resolution = body.resolution.strip() or None
             changes.append("resolution recorded")
@@ -230,6 +233,9 @@ def system_status(lab: Lab):
             "events": len(store.events),
             "alerts": len(store.alerts),
             "open_alerts": sum(1 for a in store.alerts.all() if not a.status.is_closed),
+            "active_shift": sum(1 for s in store.shifts.all() if s.status == "active"),
+            "custom_rules": len(store.custom_rules),
+            "custom_scenarios": len(store.custom_scenarios),
             "incidents": len(store.incidents),
             "open_incidents": sum(1 for i in store.incidents.all() if i.status != IncidentStatus.closed),
             "rules": len(lab.engine.rules),

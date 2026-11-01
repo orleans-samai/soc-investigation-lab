@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from datetime import timedelta
+from datetime import date, timedelta
 from typing import Any
 
 from app.detection.rules.endpoint import decode_powershell
@@ -29,6 +29,43 @@ def _duration(delta: timedelta | None) -> str | None:
     hours, rem = divmod(seconds, 3600)
     minutes, secs = divmod(rem, 60)
     return f"{hours}h {minutes:02d}m {secs:02d}s" if hours else f"{minutes}m {secs:02d}s"
+
+
+ANPD_BASIS = "Resolução CD/ANPD nº 15/2024 (Regulamento de Comunicação de Incidente de Segurança), art. 6"
+
+
+def add_business_days(start: date, days: int) -> date:
+    """Weekends are skipped; national and local holidays are not (check the calendar before relying on it)."""
+    current = start
+    while days > 0:
+        current += timedelta(days=1)
+        if current.weekday() < 5:
+            days -= 1
+    return current
+
+
+def lgpd_assessment(lab: LabService, incident: Incident, alerts: list) -> dict[str, Any]:
+    """LGPD notification duties: 3 business days to notify the ANPD and the data subjects once the controller
+    learns that the incident affected personal data; 20 business days to complement the communication."""
+    customer_data = [a.rule_id for a in alerts if (r := lab.engine.rule(a.rule_id)) and "application" in r.data_sources]
+    aware = min((a.timestamp for a in alerts), default=incident.first_seen).astimezone(lab.timezone)
+    anpd = add_business_days(aware.date(), 3)
+    return {
+        "personal_data": incident.personal_data,
+        "suggested": bool(customer_data) and incident.personal_data is None,
+        "aware_at": aware,
+        "anpd_deadline": anpd,
+        "subjects_deadline": anpd,
+        "complement_deadline": add_business_days(anpd, 20),
+        "basis": ANPD_BASIS,
+        "notes": [
+            "Deadlines count business days from when the controller learned that personal data was affected; "
+            "here, the first detection of the incident.",
+            "Notify only if the incident may cause relevant risk or damage to the data subjects (art. 5).",
+            "Small processing agents (Resolução CD/ANPD nº 2/2022) have double the time.",
+            "Holidays are not taken into account by the lab.",
+        ],
+    }
 
 
 def build_report(lab: LabService, incident: Incident, analyst: str = "SOC Analyst") -> dict[str, Any]:
@@ -123,6 +160,7 @@ def build_report(lab: LabService, incident: Incident, analyst: str = "SOC Analys
             for e in events[:30]
         ],
         "recommendations": recommendations,
+        "lgpd": lgpd_assessment(lab, incident, alerts),
         "notes": incident.notes,
     }
 
@@ -189,11 +227,25 @@ def report_markdown(report: dict[str, Any]) -> str:
         lines += [f"`{ev['timestamp']:%Y-%m-%d %H:%M:%S}` {ev['source']} {ev['event_id'] or ''}", "```", ev["raw"][:1500], "```"]
     lines += ["", "## 8. Recommendations", ""]
     lines += [f"{n}. {r}" for n, r in enumerate(report["recommendations"], 1)] or ["None."]
-    lines += ["", "## 9. Analyst notes", ""]
+    lgpd = report["lgpd"]
+    lines += ["", "## 9. LGPD notification", ""]
+    if lgpd["personal_data"]:
+        lines += [
+            f"Personal data was affected. Awareness: {lgpd['aware_at']:%Y-%m-%d %H:%M} (local time).",
+            "",
+            f"- Notify the ANPD and the data subjects by **{lgpd['anpd_deadline']:%Y-%m-%d}** (3 business days).",
+            f"- Complement the communication by **{lgpd['complement_deadline']:%Y-%m-%d}** (20 business days).",
+            f"- Basis: {lgpd['basis']}.",
+        ]
+    elif lgpd["personal_data"] is False:
+        lines.append("Assessed: no personal data affected; no ANPD communication required.")
+    else:
+        lines.append("Not assessed yet." + (" Customer data was involved: assess it." if lgpd["suggested"] else ""))
+    lines += ["", "## 10. Analyst notes", ""]
     if report["notes"]:
         lines += [f"- **{n.created_at:%Y-%m-%d %H:%M} {n.author}:** {n.body}" for n in report["notes"]]
     else:
         lines.append("No notes recorded.")
     if inc.resolution:
-        lines += ["", "## 10. Resolution", "", inc.resolution]
+        lines += ["", "## 11. Resolution", "", inc.resolution]
     return "\n".join(lines) + "\n"
