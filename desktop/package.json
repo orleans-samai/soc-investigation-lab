@@ -8,6 +8,7 @@
     "email": "noreply@example.com"
   },
   "private": true,
+  "license": "MIT",
   "main": "main.js",
   "scripts": {
     "start": "electron .",

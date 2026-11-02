@@ -290,4 +290,4 @@ samples/          arquivos para importação
 
 ---
 
-Projeto educacional. Todos os nomes, hosts, contas e endereços são fictícios.
+Projeto educacional sob a [licença MIT](LICENSE). Todos os nomes, hosts, contas e endereços são fictícios.
