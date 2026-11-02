@@ -1,148 +1,205 @@
-# SOC Investigation Lab
+<p align="center">
+  <img src="docs/assets/banner.png" alt="SOC Investigation Lab: investigue o ataque, depois conserte a detecção" width="100%">
+</p>
 
-**O simulador de SOC em que você investiga o ataque e conserta a detecção.**
+<p align="center">
+  <b>O simulador de SOC em que você investiga o ataque e conserta a detecção.</b><br>
+  Laboratório open source para analistas SOC N1/N2: do log bruto ao incidente documentado e de volta à regra,<br> com prova de que nenhum ataque escapou.
+</p>
 
-Plataforma educacional que simula a rotina de um analista SOC N1/N2: logs Windows, Linux e de aplicação são normalizados, um motor
-de detecção em Python gera alertas mapeados ao MITRE ATT&CK, alertas são correlacionados em incidentes e cada investigação termina
-em uma decisão documentada e em um relatório técnico.
+<p align="center">
+  <a href="https://github.com/orleans-samai/soc-investigation-lab/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/orleans-samai/soc-investigation-lab/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+  <a href="https://github.com/orleans-samai/soc-investigation-lab/releases/latest"><img alt="Release" src="https://img.shields.io/github/v/release/orleans-samai/soc-investigation-lab?color=3a6ce0"></a>
+  <a href="LICENSE"><img alt="Licença MIT" src="https://img.shields.io/github/license/orleans-samai/soc-investigation-lab?color=46b985"></a>
+  <img alt="Python 3.12" src="https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white">
+  <img alt="Next.js 15" src="https://img.shields.io/badge/Next.js-15-111?logo=nextdotjs&logoColor=white">
+  <img alt="MITRE ATT&CK" src="https://img.shields.io/badge/MITRE%20ATT%26CK-mapeado-c0392b">
+  <img alt="Sigma" src="https://img.shields.io/badge/Sigma-import%20%26%20export-7aa2ff">
+</p>
 
-### O que o diferencia
+<p align="center">
+  <a href="https://github.com/orleans-samai/soc-investigation-lab/releases/latest"><img alt="Baixar para Windows" src="https://img.shields.io/badge/Baixar-Windows-3a6ce0?style=for-the-badge"></a>
+  <a href="https://github.com/orleans-samai/soc-investigation-lab/releases/latest"><img alt="Baixar para Linux" src="https://img.shields.io/badge/Baixar-Linux-3a6ce0?style=for-the-badge&logo=linux&logoColor=white"></a>
+</p>
 
-A maioria dos laboratórios de SOC para estudo para na investigação: você responde perguntas sobre um ataque pronto. Aqui o ciclo
-fecha do lado da engenharia de detecção (*purple team*):
-
-1. **Teste de regressão de detecção** - antes de salvar um ajuste de regra, o lab reexecuta *todos* os cenários com a regra atual e
-   com a proposta e mostra o antes/depois: quantos ataques continuam detectados, quanto ruído saiu e qual cenário quebrou. É o
-   "rodar a suíte de testes antes do merge" aplicado a regras de SIEM.
-2. **Modo plantão** - uma fila cronometrada que mistura ataques reais, atividade autorizada e falsos positivos. Cada alerta exige
-   veredito e justificativa; a nota pune o ataque fechado como ruído muito mais do que a escalada desnecessária. Treina o que derruba
-   SOCs de verdade: **fadiga de alertas**.
-3. **Regras Sigma escritas por você** - escreva ou cole Sigma (incluindo correlações `event_count`/`value_count`), valide com
-   *dry-run* nos eventos do lab e coloque no motor ao lado das regras nativas. A regra entra no teste de regressão e exporta de volta.
-4. **Contexto brasileiro** - golpe de **tomada de conta no internet banking com PIX** (regra LAB-018 sobre logs de aplicação), o
-   caso benigno de troca de celular verificada pela central, e relatório com **prazos de comunicação à ANPD (LGPD)**: 3 dias úteis,
-   conforme a Resolução CD/ANPD nº 15/2024.
-5. **Cenários a partir de logs reais** - selecione eventos com uma consulta no Log Explorer, anonimize contas, hosts e IPs e salve
-   como cenário reexecutável com gabarito (o motor calcula as detecções esperadas). Exporte em JSON para compartilhar com a turma ou
-   o time.
-
-> **Simulation Mode** - todos os dados são sintéticos (empresa fictícia *Lab Corp*, IPs das faixas de documentação RFC 5737).
-> Nenhum serviço externo, conta ou chave de API é necessário.
-
-**Princípio do projeto:** mostrar, de ponta a ponta, como *logs viram alertas, alertas viram investigações e investigações viram
-decisões documentadas*.
-
-![Dashboard do SOC Investigation Lab](docs/screenshots/dashboard.png)
-
-<table>
-  <tr>
-    <td><img src="docs/screenshots/regression.png" alt="Teste de regressão reprovando um ajuste de limiar"></td>
-    <td><img src="docs/screenshots/shift.png" alt="Modo plantão com fila cronometrada"></td>
-  </tr>
-  <tr>
-    <td align="center">Teste de regressão: o ajuste tira ruído, mas perde um ataque</td>
-    <td align="center">Modo plantão: ataques, ruído e o relógio correndo</td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/incident.png" alt="Investigação de incidente com timeline correlacionada"></td>
-    <td><img src="docs/screenshots/query-language.png" alt="Linguagem de consulta com agregação stats count by"></td>
-  </tr>
-  <tr>
-    <td align="center">Investigação do incidente: timeline, entidades, ATT&amp;CK</td>
-    <td align="center">Log Explorer com linguagem de consulta e agregações</td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/simulation-challenge.png" alt="Modo desafio com perguntas pontuadas"></td>
-    <td><img src="docs/screenshots/rule-sigma.png" alt="Regra de detecção exportada em Sigma"></td>
-  </tr>
-  <tr>
-    <td align="center">Modo desafio: perguntas verificadas e pontuação</td>
-    <td align="center">Regras com tuning, backtest e exportação Sigma</td>
-  </tr>
-</table>
+<p align="center">
+  <a href="#por-que-é-diferente">Diferenciais</a> ·
+  <a href="#o-que-dá-para-fazer">Funcionalidades</a> ·
+  <a href="#download-e-instalação">Download</a> ·
+  <a href="#rodar-a-partir-do-código">Rodar do código</a> ·
+  <a href="#roteiro-de-demonstração">Demonstração</a> ·
+  <a href="#arquitetura">Arquitetura</a>
+</p>
 
 ---
 
-## Download e instalação (app desktop)
+## Em 30 segundos
 
-O SOC Investigation Lab também é distribuído como **aplicativo desktop**: não precisa de Python, Node.js, Docker nem internet.
-Baixe o instalador na página **Releases** do repositório:
+- **O que é:** um SOC completo em miniatura. Logs Windows, Sysmon, Linux e de aplicação viram eventos normalizados, um motor de detecção em Python gera alertas mapeados ao **MITRE ATT&CK**, alertas viram incidentes e cada investigação termina em uma decisão documentada e em um relatório.
+- **Para quem:** quem estuda para SOC N1/N2, quem ensina blue team e quem quer praticar **engenharia de detecção** sem montar um SIEM.
+- **Como rodar:** baixe o instalador para Windows ou Linux e abra. Sem conta, sem nuvem, sem chave de API, funciona offline.
+- **Dados:** 100% sintéticos (empresa fictícia *Lab Corp*, IPs das faixas de documentação RFC 5737). Nada sai da sua máquina.
 
-| Sistema | Arquivo | Como instalar |
-|---|---|---|
-| Windows 10/11 (64 bits) | `SOC-Investigation-Lab-Setup-<versão>.exe` | Execute o instalador (instalação por usuário, sem precisar de administrador). Atalhos no Menu Iniciar e na Área de Trabalho. |
-| Linux (Ubuntu, Debian, Mint...) | `SOC-Investigation-Lab-<versão>-amd64.deb` | `sudo apt install ./SOC-Investigation-Lab-*.deb` e abra pelo menu de aplicativos. |
-| Linux (qualquer distro) | `SOC-Investigation-Lab-<versão>-x86_64.AppImage` | `chmod +x SOC-Investigation-Lab-*.AppImage` e execute. |
+## Por que é diferente
 
-Observações:
+A maioria dos laboratórios de SOC para na investigação: você responde perguntas sobre um ataque pronto. Aqui o ciclo fecha do lado da detecção, como num time *purple team*: você investiga, ajusta a regra e **prova** que o ajuste não abriu um buraco.
 
-* Os instaladores não são assinados digitalmente; no Windows o SmartScreen pode exibir "O Windows protegeu o computador":
-  clique em **Mais informações → Executar assim mesmo**.
-* No Ubuntu 24.04+, se o AppImage não abrir por causa do sandbox do Chromium, prefira o `.deb` ou execute com `--no-sandbox`.
-* Os dados do laboratório ficam na pasta do usuário (Windows: `%APPDATA%\SOC Investigation Lab`; Linux:
-  `~/.config/SOC Investigation Lab`). O menu **File → Open data folder** abre essa pasta, e **Lab Settings → Reset lab**
-  restaura o estado inicial.
-* O servidor interno escuta apenas em `127.0.0.1`; nada é exposto na rede.
+```mermaid
+flowchart LR
+    L["Logs brutos<br/>Windows · Sysmon · Linux · App"] --> N[Normalização]
+    N --> D["Motor de detecção<br/>18 regras + suas regras Sigma"]
+    D --> A["Alertas<br/>MITRE ATT&CK"]
+    A --> I[Incidentes]
+    I --> R["Relatório<br/>+ prazos LGPD"]
+    I -.->|lições da investigação| T[Ajuste da regra]
+    T --> G{"Teste de regressão<br/>todos os cenários"}
+    G -->|passou| D
+    G -->|perdeu um ataque| T
+```
+
+### 1. Teste de regressão de detecção
+
+Antes de salvar um ajuste, o lab reexecuta **todos os cenários** com a regra atual e com a proposta e mostra o antes e depois: quantos ataques continuam detectados, quanto ruído saiu e qual cenário quebrou. É o "rodar a suíte de testes antes do merge" aplicado a regras de SIEM.
+
+<p align="center"><img src="docs/screenshots/regression.png" alt="Teste de regressão reprovando um ajuste de limiar" width="88%"></p>
+<p align="center"><sub>Subir o limiar da força bruta de 6 para 15 tira o falso positivo da senha esquecida, mas o <i>password spraying</i> deixa de ser detectado. O ajuste é reprovado.</sub></p>
+
+### 2. Modo plantão
+
+Uma fila cronometrada mistura ataques reais, atividade autorizada e falsos positivos, como numa segunda-feira de SOC. Cada alerta pede **veredito e justificativa**. A nota pesa acurácia (60%), SLA por severidade (20%) e notas verificáveis (20%), e um ataque fechado como ruído zera aquele alerta. Treina contra o que mais derruba SOCs de verdade: a **fadiga de alertas**.
+
+<table>
+  <tr>
+    <td width="50%" valign="top"><img src="docs/screenshots/shift.png" alt="Fila do plantão com cronômetro e triagem"></td>
+    <td width="50%" valign="top"><img src="docs/screenshots/shift-debrief.png" alt="Debriefing do plantão com a verdade de cada alerta"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>A fila ao vivo: severidade, entidade e o relógio correndo</sub></td>
+    <td align="center"><sub>O debriefing revela a verdade e explica cada ponto perdido</sub></td>
+  </tr>
+</table>
+
+### 3. Regras Sigma escritas por você
+
+Escreva ou cole uma regra [Sigma](https://sigmahq.io), incluindo correlações `event_count` e `value_count`, valide com *dry-run* nos eventos do lab e coloque no motor ao lado das 18 regras nativas. A regra ganha limiares ajustáveis, entra no teste de regressão e exporta de volta para qualquer SIEM. As regras nativas também saem em Sigma.
+
+### 4. Cenários a partir de logs reais
+
+Selecione eventos com uma consulta no Log Explorer e salve como cenário de treino reexecutável. O lab **anonimiza** contas, hosts e IPs (inclusive no texto bruto), calcula o gabarito rodando o próprio motor e exporta em JSON para compartilhar com a turma ou o time.
+
+<table>
+  <tr>
+    <td width="50%" valign="top"><img src="docs/screenshots/sigma-editor.png" alt="Editor de regra Sigma com dry-run"></td>
+    <td width="50%" valign="top"><img src="docs/screenshots/scenario-builder.png" alt="Cenário criado a partir de um auth.log anonimizado"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Sigma validada nos eventos antes de entrar no motor</sub></td>
+    <td align="center"><sub>Um auth.log real vira cenário anonimizado com gabarito</sub></td>
+  </tr>
+</table>
+
+### 5. Contexto brasileiro
+
+- **Golpe do PIX no log do internet banking:** a regra LAB-018 correlaciona login de dispositivo nunca visto, troca do telefone, favorecido novo e transferências PIX em poucos minutos. Há também o caso benigno: troca de celular confirmada pela central.
+- **LGPD no relatório:** marque que houve dados pessoais afetados e o relatório calcula os prazos de comunicação à ANPD e aos titulares (3 dias úteis) e de complementação (20 dias úteis), conforme a Resolução CD/ANPD nº 15/2024.
+
+<table>
+  <tr>
+    <td width="50%" valign="top"><img src="docs/screenshots/pix-alert.png" alt="Alerta LAB-018 de tomada de conta com PIX"></td>
+    <td width="50%" valign="top"><img src="docs/screenshots/lgpd-report.png" alt="Seção LGPD do relatório com os prazos da ANPD"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Dispositivo novo, telefone trocado e R$ 8,7 mil em 2 PIX</sub></td>
+    <td align="center"><sub>Prazos da ANPD calculados a partir da primeira detecção</sub></td>
+  </tr>
+</table>
 
 ## O que dá para fazer
 
 | Módulo | Destaques |
 |---|---|
-| **Dashboard SOC** | KPIs, atividade por período, severidade, regras mais acionadas, hosts e IPs de origem, atividade da investigação. Filtros por período, severidade, host e status. Tudo calculado pelo backend. |
-| **Log Explorer** | Filtros combináveis (usuário, IP, host, origem, tipo, resultado, nível, dataset, intervalo UTC) **ou linguagem de consulta** no estilo KQL/SPL (`outcome:failure host:bastion-01 \| stats count by source_ip \| head 10`) com drill-down a partir das agregações. Visão normalizada/bruta, detalhe completo do evento e exportação CSV/JSON. |
-| **Importação de logs** | Windows (JSON/NDJSON, incluindo **Sysmon** 1/3/10/11/22), Linux `auth.log` (syslog clássico e RFC 3339) e formato normalizado. Validação (dry run) antes de gravar, erros por linha, deduplicação por hash, fuso/ano configuráveis. |
-| **Motor de detecção** | 18 regras nativas testadas (força bruta SSH/Windows, password spraying, login após força bruta, logon privilegiado fora do horário, root via SSH, criação de conta, grupo privilegiado, PowerShell suspeito, limpeza de log, tarefa agendada, serviço novo, movimento lateral, abuso de sudo, **acesso à memória do LSASS**, **Office abrindo shell**, **correspondência com threat intel** e **tomada de conta com PIX**). Ajuste de limiares com **backtest**, **teste de regressão** sobre todos os cenários, **regras Sigma próprias** e **exportação Sigma** (correlações Sigma v2 para os limiares). |
-| **Threat intelligence** | Feed local e offline de indicadores (IP, domínio, URL, SHA256) consultado pelo motor; cada correspondência vira alerta com a severidade e a confiança do indicador. |
-| **Simulações** | 11 cenários (8 ataques, 3 de ruído: manutenção autorizada, troca de celular verificada e senha esquecida) que geram logs brutos, passam pelos parsers reais e validam se as regras esperadas dispararam. Cenários próprios a partir de logs importados, com anonimização, exportação e importação em JSON. |
-| **Modo plantão** | Fila cronometrada com ataques e ruído misturados; veredito (malicioso, benigno, falso positivo) e justificativa por alerta; nota por acurácia, SLA por severidade e qualidade da nota; debriefing com a verdade de cada alerta. |
-| **Modo desafio** | Cada execução de cenário traz perguntas de investigação com resposta verificada no servidor (por exemplo, qual conta foi comprometida ou qual máscara de acesso foi pedida ao LSASS). Dicas custam metade dos pontos; o gabarito e as explicações aparecem só depois do envio. |
-| **Alertas e incidentes** | Fila de triagem, indícios de falso positivo, correlação automática, timeline, entidades (usuário/host/IP com perfil), notas, playbook de resposta, classificação obrigatória para encerrar. |
-| **MITRE ATT&CK** | Matriz de cobertura: técnicas cobertas por regra, técnicas observadas em alertas e lacunas. |
-| **Relatórios** | Resumo executivo, escopo, detecções, ATT&CK, timeline, IOCs, evidências brutas, recomendações, **avaliação LGPD com prazos ANPD** e notas. Exporta Markdown/JSON e imprime em PDF. |
-| **Métricas** | Precisão, taxa de falso positivo, MTTD, MTTA, MTTR, desempenho por regra, cobertura dos cenários, pontuação nos desafios, histórico de plantões e último teste de regressão. |
+| **Overview** | A cadeia telemetria → detecção → incidente → decisão com conversões entre etapas, o que precisa de atenção, últimas detecções, hosts e origens. Filtros por período, severidade, host e status. |
+| **Log Explorer** | Filtros combináveis **ou linguagem de consulta** no estilo KQL/SPL (`outcome:failure host:bastion-01 \| stats count by source_ip \| head 10`) com drill-down nas agregações. Visão normalizada e bruta, exportação CSV/JSON e "salvar como cenário". |
+| **Importação** | Windows (JSON/NDJSON, incluindo **Sysmon** 1/3/10/11/22), Linux `auth.log` (syslog clássico e RFC 3339) e formato normalizado. Validação antes de gravar, erros por linha e deduplicação por hash. |
+| **Motor de detecção** | 18 regras testadas: força bruta SSH/Windows, password spraying, login após força bruta, logon privilegiado fora do horário, root via SSH, criação de conta, grupo privilegiado, PowerShell suspeito, limpeza de log, tarefa agendada, serviço novo, movimento lateral, abuso de sudo, **acesso ao LSASS**, **Office abrindo shell**, **threat intel** e **tomada de conta com PIX**. Backtest, regressão, Sigma próprio e exportação Sigma. |
+| **Threat intelligence** | Feed local e offline de indicadores (IP, domínio, URL, SHA256) consultado pelo motor. |
+| **Simulações** | 11 cenários (8 ataques, 3 de ruído) que geram logs brutos, passam pelos parsers reais e validam se as regras esperadas dispararam. |
+| **Modo desafio** | Perguntas de investigação verificadas no servidor, com dicas que custam metade dos pontos e gabarito comentado depois do envio. |
+| **Modo plantão** | Fila cronometrada, veredito e justificativa por alerta, nota por acurácia, SLA e documentação, e debriefing. |
+| **Alertas e incidentes** | Triagem, indícios de falso positivo, correlação automática, timeline, perfis de usuário/host/IP, notas, playbook e encerramento só com classificação e justificativa. |
+| **MITRE ATT&CK** | Matriz de cobertura: técnicas cobertas por regra, observadas em alertas e lacunas. |
+| **Relatórios** | Resumo executivo, escopo, detecções, ATT&CK, timeline, IOCs, evidências brutas, recomendações e avaliação LGPD. Exporta Markdown/JSON e imprime em PDF. |
+| **Métricas** | Precisão, taxa de falso positivo, MTTD, MTTA, MTTR, desempenho por regra, cobertura de cenários, desafios, plantões e último teste de regressão. |
 
-## Arquitetura
+<details>
+<summary><b>Mais telas</b> (investigação, linguagem de consulta, desafio, ATT&CK, relatório)</summary>
 
-```mermaid
-flowchart LR
-    L[Logs Windows / Linux<br/>ou cenário simulado] --> P[Parsers]
-    P --> N[Eventos normalizados<br/>raw preservado]
-    N --> D[Motor de detecção<br/>17 regras + inventário<br/>+ threat intel]
-    D --> A[Alertas<br/>MITRE ATT&CK]
-    A --> C[Correlação]
-    C --> I[Incidentes]
-    I --> R[Relatório]
-    N & A & I --> API[FastAPI] --> UI[Next.js]
-```
+<br>
 
-Detalhes em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), o sistema visual em [docs/DESIGN-SYSTEM.md](docs/DESIGN-SYSTEM.md) e a documentação de cada regra em
-[docs/DETECTION_RULES.md](docs/DETECTION_RULES.md).
+<table>
+  <tr>
+    <td width="50%" valign="top"><img src="docs/screenshots/incident.png" alt="Investigação de incidente com timeline correlacionada"></td>
+    <td width="50%" valign="top"><img src="docs/screenshots/query-language.png" alt="Linguagem de consulta com agregação stats count by"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Incidente: timeline, entidades e ATT&amp;CK</sub></td>
+    <td align="center"><sub>Linguagem de consulta com agregações e drill-down</sub></td>
+  </tr>
+  <tr>
+    <td valign="top"><img src="docs/screenshots/simulation-challenge.png" alt="Modo desafio com perguntas pontuadas"></td>
+    <td valign="top"><img src="docs/screenshots/mitre.png" alt="Matriz de cobertura MITRE ATT&CK"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Modo desafio: respostas verificadas e pontuação</sub></td>
+    <td align="center"><sub>Cobertura MITRE ATT&amp;CK por regra e por alerta</sub></td>
+  </tr>
+  <tr>
+    <td valign="top"><img src="docs/screenshots/report.png" alt="Relatório de incidente"></td>
+    <td valign="top"><img src="docs/screenshots/rule-sigma.png" alt="Regra nativa exportada em Sigma"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Relatório técnico pronto para PDF</sub></td>
+    <td align="center"><sub>Regras nativas exportadas em Sigma</sub></td>
+  </tr>
+</table>
 
-## Stack
+<p align="center"><img src="docs/screenshots/dashboard.png" alt="Overview do SOC Investigation Lab" width="100%"></p>
 
-* **Backend:** Python 3.12, FastAPI, Pydantic v2, SQLite, PyYAML (Sigma), Pytest, Ruff. API REST documentada em OpenAPI (`/docs`).
-* **Frontend:** Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4, componentes no estilo shadcn/ui sobre Radix,
-  IBM Plex (Sans, Condensed, Mono), Lucide, Recharts, Motion, SWR. Testes ponta a ponta com Playwright.
-* **Persistência:** SQLite (padrão) com gravação incremental em transações e WAL, ou arquivos JSON com escrita atômica
-  (`SOCLAB_STORAGE_BACKEND=json`). Estado em JSON de versões anteriores é migrado automaticamente; bancos corrompidos são
-  colocados em quarentena.
-* **Infra:** Docker, Docker Compose, GitHub Actions.
-* **Desktop:** Electron + PyInstaller, instaladores NSIS (Windows), AppImage e .deb (Linux).
+</details>
 
-## Como executar
+## Download e instalação
 
-### Com Docker
+Baixe o instalador na página de **[Releases](https://github.com/orleans-samai/soc-investigation-lab/releases/latest)**. Não precisa de Python, Node.js, Docker nem internet.
+
+| Sistema | Arquivo | Como instalar |
+|---|---|---|
+| Windows 10/11 (64 bits) | `SOC-Investigation-Lab-Setup-<versão>.exe` | Execute o instalador (por usuário, sem administrador). |
+| Debian, Ubuntu, Mint | `SOC-Investigation-Lab-<versão>-amd64.deb` | `sudo apt install ./SOC-Investigation-Lab-*.deb` |
+| Linux (qualquer distro) | `SOC-Investigation-Lab-<versão>-x86_64.AppImage` | `chmod +x SOC-Investigation-Lab-*.AppImage` e execute |
+
+> [!NOTE]
+> Os instaladores não têm assinatura de código. No Windows o SmartScreen pode mostrar "O Windows protegeu o computador":
+> clique em **Mais informações → Executar assim mesmo**. No Ubuntu 24.04+, se o AppImage não abrir por causa do sandbox do
+> Chromium, prefira o `.deb`.
+
+Os dados do lab ficam na pasta do usuário (`%APPDATA%\SOC Investigation Lab` no Windows, `~/.config/SOC Investigation Lab` no Linux), nunca na pasta de instalação. O servidor interno escuta apenas em `127.0.0.1`.
+
+## Rodar a partir do código
+
+<details open>
+<summary><b>Com Docker</b></summary>
 
 ```bash
 cp .env.example .env
 docker compose up --build
 ```
 
-Acesse <http://localhost:3000> (API em <http://localhost:8000/docs>).
+Interface em <http://localhost:3000> e API documentada em <http://localhost:8000/docs>.
 
-### Localmente
+</details>
 
-Requisitos: Python 3.12+ e Node.js 20+.
+<details>
+<summary><b>Localmente</b> (Python 3.12+ e Node.js 20+)</summary>
 
 ```bash
 cd backend
@@ -159,135 +216,161 @@ npm install
 npm run dev
 ```
 
-### Gerar os instaladores desktop
+Na primeira execução o backend carrega uma semana de atividade normal da *Lab Corp* e roda o motor de detecção. Para voltar ao estado inicial use **Lab settings → Reset lab** (suas regras Sigma e cenários próprios são mantidos).
 
-O app desktop é um shell **Electron** que inicia o backend empacotado com **PyInstaller**; o backend serve a interface
-Next.js exportada como arquivos estáticos (uma única origem em `127.0.0.1`).
+</details>
+
+<details>
+<summary><b>Gerar os instaladores desktop</b></summary>
+
+O app desktop é um shell **Electron** que inicia o backend empacotado com **PyInstaller**; o backend serve a interface Next.js exportada como arquivos estáticos, numa única origem em `127.0.0.1`.
 
 ```bash
 cd desktop
 npm install
-npm run dist          # gera o instalador do sistema atual em desktop/release/
+npm run dist          # instalador do sistema atual em desktop/release/
 ```
 
-O PyInstaller não faz compilação cruzada: o `.exe` é gerado no Windows e o `.AppImage`/`.deb` no Linux. O workflow
-[`.github/workflows/release.yml`](.github/workflows/release.yml) faz os dois em paralelo e publica uma Release quando uma tag
-`v*` é enviada:
+O PyInstaller não faz compilação cruzada. O workflow [`release.yml`](.github/workflows/release.yml) compila em Windows e Linux em paralelo, testa o servidor empacotado e publica a Release quando uma tag `v*` é enviada:
 
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
+git tag v1.0.1
+git push origin v1.0.1
 ```
 
-Para desenvolver o shell sem empacotar: exporte a interface (`NEXT_OUTPUT=export npx next build` em `frontend/`) e rode
-`npm start` em `desktop/` - ele usa o Python do `backend/.venv`.
+</details>
 
-Na primeira execução o backend carrega o dataset base (uma semana de atividade normal + duas detecções orgânicas) e roda o
-motor de detecção. Para voltar ao estado inicial use **Lab Settings → Reset lab**.
+## Roteiro de demonstração
 
-## Testes e qualidade
+**Em 3 minutos, o diferencial:**
+
+1. **Detection rules → LAB-002:** suba o limiar de 6 para 15 e clique em *Regression test*. O ruído da senha esquecida some, mas o teste **reprova** porque o *password spraying* deixa de ser detectado.
+2. **Shift:** comece um plantão de 10 minutos e mostre o debriefing: o ataque fechado como ruído zera aquele alerta.
+3. **Simulations → Internet-banking account takeover and PIX fraud:** investigue, marque *dados pessoais afetados* no incidente e mostre o prazo da ANPD no relatório.
+
+<details>
+<summary><b>Roteiro completo</b> (5 a 8 minutos)</summary>
+
+1. **Overview:** explique o *Simulation Mode*, o relógio simulado e a cadeia de sinal.
+2. **Simulations → "Malicious macro, PowerShell download cradle":** rode o cenário e mostre o pipeline *logs brutos → eventos → alertas → incidente* e a validação das regras esperadas.
+3. **Incidente:** percorra a timeline, abra o evento bruto, veja o PowerShell decodificado, consulte os perfis de usuário e host, registre uma nota e encerre como *true positive* com justificativa.
+4. **Relatório:** IOCs extraídos, mapeamento ATT&CK e exportação em Markdown/PDF.
+5. **Modo desafio:** rode *LSASS credential dumping (Sysmon)* e responda às perguntas usando o Log Explorer.
+6. **Linguagem de consulta:** `outcome:failure | stats count by source_ip, hostname` e clique numa linha para o drill-down.
+7. **Falso positivo:** rode *After-hours maintenance*, mostre o indício "Inside approved change CHG-xxxx" e feche como benigno.
+8. **Sigma:** clique em *New Sigma rule*, valide o modelo e coloque no motor; depois rode o *Regression suite*.
+9. **Data import:** importe `samples/malformed_sample.log` e mostre os erros por linha; importe de novo e mostre a deduplicação.
+
+</details>
+
+## Arquitetura
+
+```mermaid
+flowchart LR
+    subgraph Fontes
+        W[Windows / Sysmon JSON]
+        X[Linux auth.log]
+        J[JSON normalizado<br/>logs de aplicação]
+        S[Cenários simulados]
+    end
+    W & X & J --> P[Parsers]
+    S -->|logs brutos renderizados| P
+    P --> E[(Eventos<br/>SQLite)]
+    E --> M["Motor de detecção<br/>regras nativas + Sigma<br/>inventário + threat intel"]
+    M --> A[Alertas] --> C[Correlação] --> I[Incidentes] --> R[Relatórios]
+    E & A & I --> API[FastAPI] --> UI[Next.js]
+```
+
+| Camada | Tecnologia |
+|---|---|
+| Backend | Python 3.12, FastAPI, Pydantic v2, PyYAML (Sigma), Pytest, Ruff. OpenAPI em `/docs` |
+| Frontend | Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4, Radix, Recharts, Motion, SWR, IBM Plex |
+| Persistência | SQLite com WAL e gravação incremental (ou JSON com escrita atômica); migração e quarentena automáticas |
+| Desktop | Electron + PyInstaller: instalador NSIS (Windows), AppImage e .deb (Linux) |
+| Qualidade | GitHub Actions: lint, 175 testes de backend, build, typecheck, 9 testes e2e com Playwright e imagens Docker |
+
+Mais detalhes em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), o sistema visual em [docs/DESIGN-SYSTEM.md](docs/DESIGN-SYSTEM.md) e a documentação de cada regra em [docs/DETECTION_RULES.md](docs/DETECTION_RULES.md).
+
+<details>
+<summary><b>Decisões técnicas</b></summary>
+
+- **IDs determinísticos:** eventos usam `sha256(origem + raw)` e alertas usam `regra | chave | primeiro evento`. Reimportar ou reexecutar a detecção nunca duplica dados e preserva o trabalho do analista.
+- **Simulação pelo caminho real:** cenários geram texto bruto que passa pelos mesmos parsers da importação, então cada simulação também testa a ingestão.
+- **Regressão sem efeito colateral:** o teste roda os cenários com sementes fixas sobre a semana de baseline, em memória; nada é gravado no lab, e só as regras alteradas são reexecutadas para a proposta.
+- **Sigma vira regra de verdade:** a regra compilada herda da mesma classe das nativas, então ganha ajuste, backtest, regressão e exportação sem código especial.
+- **Contexto antes de severidade:** inventário de ativos e identidades e janelas de mudança alimentam severidade dinâmica e indícios de falso positivo.
+- **Decisão documentada:** incidentes só fecham com classificação e justificativa; a precisão nas métricas vem dessas decisões.
+- **Segurança:** limites de upload, rejeição de binários, nenhum conteúdo executado, proteção contra *CSV injection*, containers sem root e portas só em `127.0.0.1`.
+
+</details>
+
+<details>
+<summary><b>Estrutura do repositório</b></summary>
+
+```
+backend/
+  app/
+    api/          rotas FastAPI (eventos, detecção, investigação, plantão)
+    detection/    regras nativas, compilador Sigma, motor, inventário, ATT&CK, threat intel
+    models/       modelos Pydantic (contrato da API e esquema persistido)
+    parsers/      Windows/Sysmon JSON, Linux auth.log, normalizado
+    services/     orquestração, regressão, plantão, autoria de cenários, consultas, relatórios
+    simulation/   renderização de cenários e gerador do baseline
+    storage/      SQLite/JSON e repositórios
+  data/           seed, cenários, inventário, ATT&CK, threat intel
+  tests/
+frontend/
+  src/app/        páginas (overview, events, rules, simulations, shift, alerts, incidents, reports, metrics...)
+  src/components/ shell, componentes de UI e de investigação
+  e2e/            testes Playwright
+desktop/          app Electron e build dos instaladores
+docs/             arquitetura, design system, regras e capturas de tela
+marketing/        templates das imagens de divulgação
+samples/          arquivos para importar
+```
+
+</details>
+
+## Testes
 
 ```bash
-cd backend && .venv/bin/pytest            # 174 testes: parsers, regras, cenários, desafios, consultas, Sigma, regressão, plantão, SQLite e API
+cd backend && .venv/bin/pytest            # 175 testes: parsers, regras, cenários, Sigma, regressão, plantão, autoria, SQLite e API
 cd backend && .venv/bin/ruff check .
 cd frontend && npm run lint && npm run typecheck && npm run build
 cd frontend && NEXT_OUTPUT=export npm run build:export && npx playwright install chromium && npm run test:e2e
 ```
 
-Os testes Playwright (`frontend/e2e/`) sobem o lab do zero como o app desktop e percorrem o fluxo do analista: dashboard,
-simulação, incidente encerrado com justificativa, relatório, modo desafio, linguagem de consulta, importação com erros, teste de
-regressão reprovando um ajuste, regra Sigma própria, plantão pontuado e cenário criado a partir de uma consulta.
-As capturas de tela do README são regeneradas com `node scripts/screenshots.mjs`.
+`tests/test_scenarios.py` funciona como validação de detecção: cada cenário, com duas sementes, precisa disparar **exatamente** as regras para as quais foi desenhado, e o conjunto de cenários precisa cobrir todas as regras. Os testes Playwright sobem o lab do zero como o app desktop e percorrem o fluxo do analista, do Overview ao plantão pontuado.
 
-`tests/test_scenarios.py` funciona como uma validação de detecção: cada cenário, com duas sementes diferentes, precisa disparar
-**exatamente** as regras para as quais foi desenhado, e o conjunto de cenários precisa cobrir todas as regras.
+As capturas deste README são geradas a partir do app real: `node scripts/screenshots.mjs` e `node scripts/linkedin-assets.mjs` em `frontend/`.
 
-## Roteiro de demonstração (5 a 8 minutos)
+<details>
+<summary><b>Arquivos de exemplo</b> para importar</summary>
 
-O roteiro curto que mostra o diferencial (3 minutos):
-
-* **Detection rules → LAB-002** - suba o limiar de 6 para 15 e clique em *Regression test*: o ruído do cenário de senha esquecida
-  some, mas o teste **reprova** porque o *password spraying* deixa de ser detectado. Volte o valor e escreva uma regra Sigma que
-  resolva o falso positivo sem perder o ataque.
-* **Shift** - comece um plantão de 10 minutos e mostre o debriefing: o ataque fechado como ruído zera a pontuação daquele alerta.
-* **Simulations → Internet-banking account takeover and PIX fraud** - investigue, marque *dados pessoais afetados* no incidente e
-  mostre no relatório o prazo da ANPD.
-
-Roteiro completo:
-
-1. **Dashboard** - explique o *Simulation Mode*, o relógio simulado e os indicadores.
-2. **Simulations → "Malicious macro, PowerShell download cradle"** - rode o cenário e mostre o pipeline
-   *logs brutos → eventos → alertas → incidente* e a validação das regras esperadas.
-3. **Incidente** - percorra a timeline, abra o evento bruto, veja o comando PowerShell decodificado, consulte o perfil do usuário
-   e do host, registre uma nota e encerre como *true positive* com a justificativa.
-4. **Relatório** - mostre IOCs extraídos, mapeamento ATT&CK e exporte em Markdown/PDF.
-5. **Modo desafio** - rode *LSASS credential dumping (Sysmon)* e responda às perguntas usando o Log Explorer.
-6. **Linguagem de consulta** - `outcome:failure | stats count by source_ip, hostname` e clique numa linha para o drill-down.
-7. **Falso positivo** - rode *After-hours maintenance*, abra o alerta, mostre o indício "Inside approved change CHG-xxxx" e feche
-   como benigno.
-8. **Detection Rules** - altere o limiar do LAB-001, rode o backtest, abra a aba *Sigma rule* e discuta o equilíbrio entre ruído e cobertura.
-9. **Data Import** - importe `samples/malformed_sample.log` e mostre os erros por linha; importe o mesmo arquivo de novo e mostre a
-   deduplicação.
-
-## Arquivos de exemplo
-
-Em [`samples/`](samples) (também disponíveis para download na tela de importação):
+Em [`samples/`](samples), também disponíveis na tela de importação:
 
 | Arquivo | Conteúdo |
 |---|---|
-| `windows_security_sample.json` | Rajada de 4625 seguida de 4624 a partir de IP externo (dispara LAB-002 e LAB-004) |
-| `linux_auth_sample.log` | Força bruta SSH em syslog clássico + tentativa de sudo negada (use ano 2026, fuso UTC) |
+| `windows_security_sample.json` | Rajada de 4625 seguida de 4624 a partir de IP externo (LAB-002 e LAB-004) |
+| `linux_auth_sample.log` | Força bruta SSH em syslog clássico e sudo negado (use ano 2026, fuso UTC) |
 | `normalized_sample.json` | Eventos no esquema interno, com um registro inválido proposital |
-| `sysmon_sample.json` | Sysmon: acesso ao LSASS por um binário suspeito (LAB-015) e por um antivírus (ignorado), DNS para domínio de phishing (LAB-016) |
-| `malformed_sample.log` | Linhas válidas misturadas com conteúdo inválido para demonstrar o relatório de erros |
+| `sysmon_sample.json` | Acesso ao LSASS por binário suspeito (LAB-015) e por antivírus (ignorado), DNS para domínio de phishing (LAB-016) |
+| `malformed_sample.log` | Linhas válidas e inválidas misturadas para demonstrar o relatório de erros |
 
-## Estrutura
+</details>
 
-```
-backend/
-  app/
-    api/          rotas FastAPI
-    detection/    regras, motor, inventário, catálogo MITRE
-    models/       modelos Pydantic (contrato da API e esquema persistido)
-    parsers/      Windows JSON, Linux auth.log, normalizado
-    services/     orquestração, consultas, analytics, relatórios, ingestão
-    simulation/   cenários e gerador do baseline
-    storage/      persistência JSON atômica e repositórios
-  data/           seed, cenários, inventário, ATT&CK
-  tests/
-frontend/
-  src/app/        páginas (dashboard, alerts, incidents, events, rules, mitre, simulations, reports, metrics, import, settings)
-  src/components/ shell, componentes de UI e de investigação
-desktop/          app Electron (main.js), script de build dos instaladores e ícone
-docs/             arquitetura e regras de detecção
-samples/          arquivos para importação
-```
+## Limitações
 
-## Decisões técnicas
+- Laboratório local de usuário único, sem autenticação. Não exponha na rede.
+- O motor reavalia todos os eventos a cada ingestão: bom para centenas de milhares de eventos; volumes maiores pediriam detecção incremental e PostgreSQL atrás do mesmo repositório.
+- O subconjunto Sigma cobre o uso do dia a dia; correlações temporais, modificadores `base64`/`windash` e agregações com pipe são recusados com mensagem clara.
+- A anonimização troca contas, hosts e IPs, mas não detecta segredos em texto livre: revise a prévia antes de compartilhar.
+- Os prazos da LGPD contam dias úteis de segunda a sexta, sem feriados, e são uma referência didática, não orientação jurídica.
 
-* **IDs determinísticos** - eventos usam `sha256(origem + raw)`; alertas usam `regra | chave | primeiro evento`. Reimportar ou
-  reexecutar a detecção nunca duplica dados e preserva o trabalho do analista.
-* **Simulação pelo caminho real** - cenários geram texto bruto e passam pelos mesmos parsers da importação, então a simulação
-  também testa a ingestão.
-* **Contexto antes de severidade** - o inventário de ativos/identidades e as janelas de mudança alimentam severidade dinâmica
-  (conta privilegiada, conta recém-criada) e indícios de falso positivo.
-* **Decisão documentada** - incidentes só fecham com classificação e justificativa; métricas de precisão vêm dessas decisões.
-* **Segurança** - limites de upload, rejeição de binários, nenhum conteúdo executado, proteção contra *CSV injection*, containers
-  sem root, portas expostas apenas em `127.0.0.1`.
-
-## Limitações e próximos passos
-
-* Sem autenticação: é um laboratório local de usuário único.
-* O motor reavalia todos os eventos a cada ingestão: adequado a centenas de milhares de eventos; volumes maiores pediriam
-  detecção incremental e PostgreSQL atrás do mesmo repositório.
-* O subconjunto Sigma cobre o que analistas escrevem no dia a dia; correlações `temporal`, modificadores `base64`/`windash` e
-  agregações com pipe (obsoletas no Sigma) ainda não são aceitos e são recusados com mensagem clara.
-* A anonimização de cenários troca contas, hosts e IPs em todos os campos e no texto bruto, mas não detecta segredos em texto livre:
-  revise a prévia antes de compartilhar.
-* Os prazos da LGPD contam só dias úteis de segunda a sexta (feriados não entram) e são uma referência didática, não orientação jurídica.
-* Possíveis evoluções: interface em português, logs de proxy/firewall como novas fontes, ranking de turma para o modo plantão e
-  modo multiusuário.
+Próximos passos possíveis: interface em português, logs de proxy e firewall, ranking de turma no modo plantão e modo multiusuário.
 
 ---
 
-Projeto educacional sob a [licença MIT](LICENSE). Todos os nomes, hosts, contas e endereços são fictícios.
+<p align="center">
+  <sub>Projeto educacional sob a <a href="LICENSE">licença MIT</a>. Todos os nomes, hosts, contas e endereços são fictícios.</sub>
+</p>

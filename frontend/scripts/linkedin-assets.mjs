@@ -1,9 +1,9 @@
 // Builds the LinkedIn demo images (marketing/linkedin/*.png + carousel PDF) from a fresh lab.
 // 1. captures real UI states of each differentiator into marketing/linkedin/raw/
-// 2. renders marketing/linkedin/slides.html (1080x1350 slides) to PNG and to a PDF carousel.
+// 2. renders marketing/linkedin/slides.html (1080x1350 carousel, PNG + PDF) and landscape.html (1920x1080 post images).
 // Prerequisite: the static UI is built (NEXT_OUTPUT=export npx next build).  Usage: node scripts/linkedin-assets.mjs [--skip-capture]
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -76,7 +76,7 @@ async function capture(browser) {
 
     // Cover: the overview with its signal chain.
     await go("/?", 1000);
-    await mainClip("overview", 820);
+    await mainClip("overview", 1000);
 
     // 1. Regression test that fails a tuning change.
     await go("/rules/?rule=LAB-002", 1750);
@@ -154,28 +154,42 @@ async function capture(browser) {
   }
 }
 
-async function render(browser) {
-  const page = await browser.newPage({ viewport: { width: 1080, height: 1350 }, deviceScaleFactor: 2 });
-  await page.goto(pathToFileURL(join(outDir, "slides.html")).href);
+// Renders every .slide of a template to PNG (named <prefix><nn>-<data-name>.png) and optionally to a PDF.
+async function render(browser, { file, width, height, scale, prefix = "", pdf, src = outDir, dest = outDir, names = true }) {
+  const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: scale });
+  await page.goto(pathToFileURL(join(src, file)).href);
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(300);
   const slides = page.locator(".slide");
   const count = await slides.count();
   for (let i = 0; i < count; i++) {
     const name = await slides.nth(i).getAttribute("data-name");
-    await slides.nth(i).screenshot({ path: join(outDir, `${String(i + 1).padStart(2, "0")}-${name}.png`) });
-    console.log(`rendered ${name}`);
+    const out = names ? `${prefix}${String(i + 1).padStart(2, "0")}-${name}.png` : `${name}.png`;
+    await slides.nth(i).screenshot({ path: join(dest, out) });
+    console.log(`rendered ${prefix}${name}`);
   }
-  await page.emulateMedia({ media: "print" });
-  await page.pdf({ path: join(outDir, "soc-investigation-lab-carousel.pdf"), width: "1080px", height: "1350px", printBackground: true });
-  console.log("rendered carousel PDF");
+  if (pdf) {
+    await page.emulateMedia({ media: "print" });
+    await page.pdf({ path: join(outDir, pdf), width: `${width}px`, height: `${height}px`, printBackground: true });
+    console.log(`rendered ${pdf}`);
+  }
   await page.close();
 }
 
 const browser = await chromium.launch();
 try {
-  if (!process.argv.includes("--skip-capture")) await capture(browser);
-  await render(browser);
+  if (!process.argv.includes("--skip-capture")) {
+    await capture(browser);
+    // The README shows the same differentiator screens.
+    const shots = { "sigma.png": "sigma-editor.png", "scenario-builder.png": "scenario-builder.png", "pix-alert.png": "pix-alert.png", "lgpd.png": "lgpd-report.png", "shift-debrief.png": "shift-debrief.png" };
+    for (const [from, to] of Object.entries(shots)) copyFileSync(join(rawDir, from), join(root, "docs", "screenshots", to));
+  }
+  // Portrait carousel (document post) and 16:9 images to attach to a text post.
+  await render(browser, { file: "slides.html", width: 1080, height: 1350, scale: 2, pdf: "soc-investigation-lab-carousel.pdf" });
+  await render(browser, { file: "landscape.html", width: 1920, height: 1080, scale: 1, prefix: "16x9-" });
+  // README banner (docs/assets/banner.png).
+  mkdirSync(join(root, "docs", "assets"), { recursive: true });
+  await render(browser, { file: "banner.html", width: 1700, height: 620, scale: 2, src: join(root, "marketing", "github"), dest: join(root, "docs", "assets"), names: false });
 } finally {
   await browser.close();
 }

@@ -124,7 +124,9 @@ test("shift mode scores a triaged queue", async ({ page }) => {
 test("events selected with a query become a scenario", async ({ page }) => {
   await page.goto("/events/");
   await page.getByRole("radio", { name: "Query language" }).click();
-  await page.getByRole("textbox", { name: "Query", exact: true }).fill("outcome:failure host:bastion-01");
+  // The baseline brute force only: shift mode (earlier in this run) may add random SSH attacks on the same host,
+  // which would stretch the selection past the 7-day limit.
+  await page.getByRole("textbox", { name: "Query", exact: true }).fill("outcome:failure host:bastion-01 source_ip:198.51.100.23");
   await page.getByRole("button", { name: "Run", exact: true }).click();
   await page.getByRole("button", { name: "Save as scenario" }).click();
   const sheet = page.getByRole("dialog");

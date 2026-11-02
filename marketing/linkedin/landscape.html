@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>SOC Investigation Lab - LinkedIn 16:9</title>
+<!-- Rendered by frontend/scripts/linkedin-assets.mjs. Each .slide is one 1920x1080 image to attach to a text post. -->
+<link rel="stylesheet" href="../../frontend/node_modules/@fontsource/ibm-plex-sans/400.css">
+<link rel="stylesheet" href="../../frontend/node_modules/@fontsource/ibm-plex-sans/600.css">
+<link rel="stylesheet" href="../../frontend/node_modules/@fontsource/ibm-plex-sans-condensed/600.css">
+<link rel="stylesheet" href="../../frontend/node_modules/@fontsource/ibm-plex-mono/400.css">
+<link rel="stylesheet" href="../../frontend/node_modules/@fontsource/ibm-plex-mono/500.css">
+<style>
+  /* Same tokens as the app (frontend/src/app/globals.css) and the carousel (slides.html). */
+  :root {
+    --bg: #0f1216; --surface: #151920; --border: #252b36; --border-strong: #343c4a;
+    --fg: #e4e8ee; --muted: #9da6b5; --subtle: #7b8596; --primary: #7aa2ff;
+    --critical: #f25a5e; --success: #46b985;
+    --sans: "IBM Plex Sans", sans-serif; --display: "IBM Plex Sans Condensed", sans-serif; --mono: "IBM Plex Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #08090b; color: var(--fg); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+  body { display: flex; flex-direction: column; align-items: center; gap: 48px; padding: 48px 0; }
+
+  .slide { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); }
+  /* faint wire across the top: the signal chain, running into the screenshot */
+  .slide::before { content: ""; position: absolute; left: 96px; right: 0; top: 168px; height: 1px; background: linear-gradient(90deg, var(--border-strong), transparent 55%); }
+
+  .copy { position: absolute; left: 96px; top: 78px; bottom: 78px; width: 820px; display: flex; flex-direction: column; }
+  .brand { display: flex; align-items: center; gap: 16px; font-size: 26px; font-weight: 600; letter-spacing: -0.01em; }
+  .eyebrow { margin-top: 92px; font-family: var(--mono); font-size: 21px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--primary); }
+  h1 { margin: 20px 0 0; font-family: var(--display); font-weight: 600; font-size: 92px; line-height: 1; letter-spacing: -0.02em; }
+  h1 .hl { color: var(--primary); }
+  h1 .bad { color: var(--critical); }
+  .lead { margin: 28px 0 0; font-size: 28px; line-height: 1.45; color: var(--muted); }
+  .lead b { color: var(--fg); font-weight: 600; }
+
+  .points { margin: 34px 0 0; padding: 0; list-style: none; }
+  .points li { display: flex; gap: 18px; align-items: baseline; padding: 9px 0; font-size: 25px; }
+  .points li span { flex: none; width: 28px; font-family: var(--mono); font-size: 17px; color: var(--primary); }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-top: 40px; overflow: hidden; border: 1px solid var(--border); border-radius: 10px; background: var(--border); }
+  .stat { background: var(--surface); padding: 20px 24px 22px; }
+  .stat .k { font-family: var(--mono); font-size: 15px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--subtle); }
+  .stat .v { margin-top: 10px; font-family: var(--display); font-weight: 600; font-size: 52px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .stat .v s { color: var(--subtle); text-decoration-thickness: 2px; }
+  .stat .v .arrow { margin: 0 6px; font-size: 34px; vertical-align: 7px; color: var(--subtle); }
+  .good { color: var(--success); } .crit { color: var(--critical); }
+
+  .foot { margin-top: auto; font-family: var(--mono); font-size: 20px; line-height: 1.6; color: var(--subtle); white-space: nowrap; }
+  .foot b { color: var(--fg); font-weight: 500; }
+  .foot i { font-style: normal; margin: 0 10px; color: var(--border-strong); }
+  .foot .url { display: block; color: var(--primary); }
+
+  /* the app window bleeds off the right and bottom edges */
+  .shot { position: absolute; left: 1010px; top: 128px; width: 1060px; bottom: -40px; overflow: hidden; background: var(--bg);
+          border: 1px solid var(--border-strong); border-radius: 16px; box-shadow: -30px 30px 90px rgba(0, 0, 0, 0.55); }
+  .shot .bar { position: relative; z-index: 1; height: 48px; display: flex; align-items: center; gap: 10px; padding: 0 22px; background: var(--surface);
+               border-bottom: 1px solid var(--border); font-family: var(--mono); font-size: 17px; color: var(--subtle); }
+  .shot .bar b { color: var(--fg); font-weight: 500; }
+  .shot .bar .sim { margin-left: 24px; padding: 2px 9px; border-radius: 3px; font-size: 13px; letter-spacing: 0.06em; color: #e2b53e;
+                    background: repeating-linear-gradient(-45deg, rgba(226,181,62,.16) 0 6px, rgba(226,181,62,.05) 6px 12px); border: 1px solid rgba(226,181,62,.35); }
+  .shot .view { position: absolute; inset: 48px 0 0 0; overflow: hidden; }
+  .shot img { position: absolute; left: 0; top: 0; width: var(--w, 100%); transform: translate(var(--x, 0), var(--y, 0)); }
+</style>
+</head>
+<body>
+
+<!-- 1. What it is -->
+<section class="slide" data-name="apresentacao">
+  <div class="copy">
+    <div class="brand"><svg width="62" height="16" viewBox="0 0 54 14"><path d="M7 7h40" stroke="#343c4a" stroke-width="1.5"/><circle cx="7" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="20.3" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="33.6" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="47" cy="7" r="5" fill="#7aa2ff"/></svg>SOC Investigation Lab</div>
+    <div class="eyebrow">Simulador de SOC · open source</div>
+    <h1>Investigue o ataque.<br><span class="hl">Depois conserte<br>a detecção.</span></h1>
+    <p class="lead">Do log bruto ao incidente documentado, e de volta à regra, com <b>prova de que nenhum ataque escapou</b>.</p>
+    <ul class="points">
+      <li><span>01</span>Teste de regressão de detecção</li>
+      <li><span>02</span>Modo plantão contra fadiga de alertas</li>
+      <li><span>03</span>Regras Sigma escritas por você</li>
+      <li><span>04</span>Golpe do PIX e prazos da LGPD</li>
+      <li><span>05</span>Cenários a partir de logs reais</li>
+    </ul>
+    <div class="foot"><b>Windows · Linux</b><i>/</i>offline<i>/</i>licença MIT<span class="url">github.com/orleans-samai/soc-investigation-lab</span></div>
+  </div>
+  <div class="shot">
+    <div class="bar"><b>Overview</b> · telemetria → detecção → incidente → decisão<span class="sim">SIMULATION</span></div>
+    <div class="view"><img src="raw/overview.png" alt="" style="--w: 108%"></div>
+  </div>
+</section>
+
+<!-- 2. The differentiator in action -->
+<section class="slide" data-name="teste-de-regressao">
+  <div class="copy">
+    <div class="brand"><svg width="62" height="16" viewBox="0 0 54 14"><path d="M7 7h40" stroke="#343c4a" stroke-width="1.5"/><circle cx="7" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="20.3" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="33.6" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="47" cy="7" r="5" fill="#7aa2ff"/></svg>SOC Investigation Lab</div>
+    <div class="eyebrow">Teste de regressão de detecção</div>
+    <h1>Tirou o falso positivo.<br><span class="bad">Perdeu um ataque.</span></h1>
+    <p class="lead">Antes de salvar um ajuste, o lab reexecuta <b>todos os cenários</b> com a regra atual e com a proposta. Limiar da força bruta de 6 para 15: o ruído cai, o password spraying passa e <b>o ajuste é reprovado</b>.</p>
+    <div class="stats">
+      <div class="stat"><div class="k">Ataques detectados</div><div class="v"><s>8</s><span class="arrow">→</span>7</div></div>
+      <div class="stat"><div class="k">Alertas de ruído</div><div class="v"><s>9</s><span class="arrow">→</span><span class="good">7</span></div></div>
+      <div class="stat"><div class="k">Veredito</div><div class="v crit">Reprovado</div></div>
+    </div>
+    <div class="foot"><b>Purple team no seu notebook</b><i>/</i>open source<span class="url">github.com/orleans-samai/soc-investigation-lab</span></div>
+  </div>
+  <div class="shot" style="width: 860px; left: 1010px">
+    <div class="bar"><b>Detection rules</b> › LAB-002 › regression test<span class="sim">SIMULATION</span></div>
+    <div class="view"><img src="raw/regression.png" alt="" style="--y: -1%"></div>
+  </div>
+</section>
+
+</body>
+</html>

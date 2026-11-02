@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>SOC Investigation Lab - README banner</title>
+<!-- Rendered to docs/assets/banner.png by frontend/scripts/linkedin-assets.mjs (1600x520 @2x). -->
+<link rel="stylesheet" href="../../frontend/node_modules/@fontsource/ibm-plex-sans/400.css">
+<link rel="stylesheet" href="../../frontend/node_modules/@fontsource/ibm-plex-sans/600.css">
+<link rel="stylesheet" href="../../frontend/node_modules/@fontsource/ibm-plex-sans-condensed/600.css">
+<link rel="stylesheet" href="../../frontend/node_modules/@fontsource/ibm-plex-mono/400.css">
+<link rel="stylesheet" href="../../frontend/node_modules/@fontsource/ibm-plex-mono/500.css">
+<style>
+  :root {
+    --bg: #0f1216; --surface: #151920; --border: #252b36; --border-strong: #343c4a;
+    --fg: #e4e8ee; --muted: #9da6b5; --subtle: #7b8596; --primary: #7aa2ff; --critical: #f25a5e;
+    --sans: "IBM Plex Sans", sans-serif; --display: "IBM Plex Sans Condensed", sans-serif; --mono: "IBM Plex Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #08090b; color: var(--fg); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+  body { padding: 40px; }
+  .slide { position: relative; width: 1600px; height: 520px; overflow: hidden; background: var(--bg); }
+
+  .copy { position: absolute; left: 72px; top: 62px; width: 760px; }
+  .brand { display: flex; align-items: center; gap: 14px; font-family: var(--mono); font-size: 17px; letter-spacing: .08em; text-transform: uppercase; color: var(--primary); }
+  h1 { margin: 22px 0 0; font-family: var(--display); font-weight: 600; font-size: 84px; line-height: 1; letter-spacing: -0.02em; }
+  .tag { margin: 18px 0 0; font-family: var(--display); font-weight: 600; font-size: 38px; line-height: 1.15; color: var(--muted); }
+  .tag span { color: var(--primary); }
+
+  /* the signal chain, the product's thesis */
+  .chain { position: absolute; left: 72px; bottom: 58px; width: 740px; display: flex; align-items: center; }
+  .stage { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 15px; letter-spacing: .08em; text-transform: uppercase; color: var(--fg); white-space: nowrap; }
+  .stage i { font-style: normal; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: #0b1020; font-size: 13px; font-weight: 500; }
+  .wire { flex: 1; height: 1.5px; margin: 0 14px; background: linear-gradient(90deg, var(--primary), var(--border-strong)); }
+
+  /* two app windows, overlapping and bleeding off the right edge */
+  .win { position: absolute; overflow: hidden; background: var(--bg); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: -24px 24px 70px rgba(0,0,0,.6); }
+  .win .bar { height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 16px; background: var(--surface); border-bottom: 1px solid var(--border);
+              font-family: var(--mono); font-size: 13px; color: var(--subtle); white-space: nowrap; }
+  .win .bar b { color: var(--fg); font-weight: 500; }
+  .win img { display: block; width: 100%; }
+  .back { left: 900px; top: 48px; width: 760px; height: 520px; }
+  .front { left: 1040px; top: 196px; width: 640px; height: 400px; }
+</style>
+</head>
+<body>
+<section class="slide" data-name="banner">
+  <div class="copy">
+    <div class="brand"><svg width="54" height="14" viewBox="0 0 54 14"><path d="M7 7h40" stroke="#343c4a" stroke-width="1.5"/><circle cx="7" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="20.3" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="33.6" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="47" cy="7" r="5" fill="#7aa2ff"/></svg>Simulador de SOC · open source</div>
+    <h1>SOC Investigation Lab</h1>
+    <p class="tag">Investigue o ataque.<br><span>Depois conserte a detecção.</span></p>
+  </div>
+  <div class="chain"><div class="stage"><i>1</i>Ingest</div><div class="wire"></div><div class="stage"><i>2</i>Detect</div><div class="wire"></div><div class="stage"><i>3</i>Respond</div><div class="wire"></div><div class="stage"><i>4</i>Report</div></div>
+  <div class="win back"><div class="bar"><b>Overview</b> · telemetria → detecção → incidente → decisão</div><img src="../linkedin/raw/overview.png" alt=""></div>
+  <div class="win front"><div class="bar"><b>Detection rules</b> › LAB-002 › regression test</div><img src="../linkedin/raw/regression.png" alt=""></div>
+</section>
+</body>
+</html>
