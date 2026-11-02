@@ -28,6 +28,11 @@ MAX_SCENARIO_EVENTS = 500
 MAX_SPAN_SECONDS = 7 * 24 * 3600
 KEEP_ACCOUNTS = {"root", "administrator", "admin", "system", "guest", "-", "anonymous logon", "local service", "network service"}
 _SLUG = re.compile(r"[^a-z0-9]+")
+# Internal address space. ipaddress.is_private is not enough: it also flags documentation ranges (RFC 5737),
+# which the lab uses for *external* attackers, so an attacker would become an internal host after anonymization.
+INTERNAL_NETWORKS = [
+    ipaddress.ip_network(n) for n in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "169.254.0.0/16", "fc00::/7", "fe80::/10")
+]
 
 
 class AuthoringError(ValueError):
@@ -73,8 +78,9 @@ class Pseudonyms:
             return value
         if value not in self.ips:
             n = len(self.ips) + 1
-            # Private stays private, public becomes a documentation range (RFC 5737), so rules behave the same.
-            self.ips[value] = f"10.99.{n // 250}.{n % 250 + 1}" if addr.is_private else f"203.0.113.{n % 254 + 1}"
+            # Internal stays internal, external becomes a documentation range (RFC 5737), so rules behave the same.
+            internal = any(addr in net for net in INTERNAL_NETWORKS if net.version == addr.version)
+            self.ips[value] = f"10.99.{n // 250}.{n % 250 + 1}" if internal else f"203.0.113.{n % 254 + 1}"
         return self.ips[value]
 
     def table(self) -> list[dict[str, str]]:

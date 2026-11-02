@@ -221,6 +221,14 @@ class TestAuthoring:
         assert not any(o.lower() in text for o in originals)
         assert "LAB-001" in preview["scenario"]["expected_rules"]
 
+    def test_pseudonyms_keep_internal_and_external_apart(self):
+        from app.services.authoring import Pseudonyms
+
+        names = Pseudonyms()
+        assert names.ip("10.10.10.23").startswith("10.99.")
+        assert names.ip("198.51.100.200").startswith("203.0.113.")  # documentation range = external attacker
+        assert names.ip("127.0.0.1") == "127.0.0.1"
+
     def test_saved_scenario_runs_repeatedly_and_exports(self, client):
         body = {
             "query": self.QUERY,

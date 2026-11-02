@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>SOC Investigation Lab - LinkedIn</title>
+<!-- Rendered by frontend/scripts/linkedin-assets.mjs. Each .slide is one 1080x1350 image / PDF page. -->
+<link rel="stylesheet" href="../../frontend/node_modules/@fontsource/ibm-plex-sans/400.css">
+<link rel="stylesheet" href="../../frontend/node_modules/@fontsource/ibm-plex-sans/500.css">
+<link rel="stylesheet" href="../../frontend/node_modules/@fontsource/ibm-plex-sans/600.css">
+<link rel="stylesheet" href="../../frontend/node_modules/@fontsource/ibm-plex-sans-condensed/600.css">
+<link rel="stylesheet" href="../../frontend/node_modules/@fontsource/ibm-plex-mono/400.css">
+<link rel="stylesheet" href="../../frontend/node_modules/@fontsource/ibm-plex-mono/500.css">
+<style>
+  /* Same tokens as the app (frontend/src/app/globals.css, dark theme). */
+  :root {
+    --bg: #0f1216; --surface: #151920; --surface-2: #1b2029; --border: #252b36; --border-strong: #343c4a;
+    --fg: #e4e8ee; --muted: #9da6b5; --subtle: #7b8596; --primary: #7aa2ff;
+    --critical: #f25a5e; --high: #f2913f; --success: #46b985;
+    --sans: "IBM Plex Sans", sans-serif; --display: "IBM Plex Sans Condensed", sans-serif; --mono: "IBM Plex Mono", monospace;
+  }
+  @page { size: 1080px 1350px; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #08090b; color: var(--fg); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+  body { display: flex; flex-direction: column; align-items: center; gap: 48px; padding: 48px 0; }
+  @media print { body { gap: 0; padding: 0; } }
+
+  .slide { position: relative; width: 1080px; height: 1350px; overflow: hidden; background: var(--bg); padding: 60px 72px 0;
+           display: flex; flex-direction: column; break-after: page; }
+
+  /* header: brand + page counter */
+  .top { display: flex; align-items: center; justify-content: space-between; }
+  .brand { display: flex; align-items: center; gap: 14px; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .count { font-family: var(--mono); font-size: 18px; color: var(--subtle); }
+
+  /* the signal chain: the product's thesis, used as the navigation of the carousel */
+  .chain { display: flex; align-items: center; margin-top: 34px; }
+  .stage { display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--subtle); white-space: nowrap; }
+  .stage i { font-style: normal; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--border-strong); font-size: 13px; letter-spacing: 0; }
+  .stage.on { color: var(--fg); }
+  .stage.on i { border-color: var(--primary); background: var(--primary); color: #0b1020; font-weight: 500; }
+  .wire { flex: 1; height: 1.5px; margin: 0 16px; background: var(--border-strong); }
+  .wire.on { background: linear-gradient(90deg, var(--primary), var(--border-strong)); }
+
+  .eyebrow { margin-top: 56px; font-family: var(--mono); font-size: 18px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--primary); }
+  h1 { margin: 18px 0 0; font-family: var(--display); font-weight: 600; font-size: 74px; line-height: 1.02; letter-spacing: -0.02em; }
+  h1 .hl { color: var(--primary); }
+  h1 .bad { color: var(--critical); }
+  .lead { margin: 24px 0 0; max-width: 920px; font-size: 27px; line-height: 1.45; color: var(--muted); }
+  .lead b { color: var(--fg); font-weight: 600; }
+
+  /* figures row */
+  .stats { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; margin-top: 34px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--border); gap: 1px; }
+  .stat { background: var(--surface); padding: 18px 22px 20px; }
+  .stat .k { font-family: var(--mono); font-size: 14px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--subtle); }
+  .stat .v { margin-top: 8px; font-family: var(--display); font-weight: 600; font-size: 46px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .stat .v s { color: var(--subtle); text-decoration-thickness: 2px; }
+  .stat .v .arrow { color: var(--subtle); font-size: 30px; margin: 0 6px; vertical-align: 6px; }
+  .good { color: var(--success); } .crit { color: var(--critical); }
+
+  /* the screenshot frame bleeds off the bottom edge, like a window sliding into the slide */
+  .shot { position: relative; flex: 1; margin-top: 40px; border: 1px solid var(--border-strong); border-bottom: 0; border-radius: 14px 14px 0 0;
+          overflow: hidden; background: var(--bg); box-shadow: 0 -10px 60px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255,255,255,0.02) inset; }
+  .shot .bar { position: relative; z-index: 1; height: 42px; display: flex; align-items: center; gap: 10px; padding: 0 18px; background: var(--surface);
+               border-bottom: 1px solid var(--border); font-family: var(--mono); font-size: 15px; color: var(--subtle); }
+  .shot .bar b { color: var(--fg); font-weight: 500; }
+  .shot .bar .sim { margin-left: auto; padding: 2px 8px; border-radius: 3px; font-size: 12px; letter-spacing: 0.06em; color: #e2b53e;
+                    background: repeating-linear-gradient(-45deg, rgba(226,181,62,.16) 0 6px, rgba(226,181,62,.05) 6px 12px); border: 1px solid rgba(226,181,62,.35); }
+  .shot .view { position: absolute; inset: 42px 0 0 0; overflow: hidden; }
+  /* --w: rendered width of the screenshot relative to the frame; --x/--y: offset, to zoom on the part that matters */
+  .shot img { position: absolute; left: 0; top: 0; width: var(--w, 100%); transform: translate(var(--x, 0), var(--y, 0)); }
+
+  .shot.fit { flex: none; border-bottom: 1px solid var(--border-strong); border-radius: 14px; }
+  .shot.fit .view { position: static; }
+  .shot.fit img { position: static; display: block; width: 100%; transform: none; }
+  .lesson { margin-top: 30px; padding: 22px 26px; border: 1px solid rgba(242,90,94,.35); border-left: 4px solid var(--critical); border-radius: 10px;
+            background: rgba(242,90,94,.08); font-size: 24px; line-height: 1.45; color: var(--muted); }
+  .lesson span { display: block; margin-bottom: 6px; font-family: var(--mono); font-size: 14px; letter-spacing: .08em; text-transform: uppercase; color: var(--critical); }
+  .lesson b { color: var(--fg); }
+  .foot { display: flex; justify-content: space-between; align-items: center; height: 92px; margin: auto -72px 0; padding: 0 72px;
+          border-top: 1px solid var(--border); font-family: var(--mono); font-size: 16px; color: var(--subtle); }
+
+  /* cover */
+  .cover h1 { font-size: 92px; }
+  .points { margin: 34px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--border); }
+  .points li { display: flex; gap: 20px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--border); font-size: 25px; }
+  .points li span { font-family: var(--mono); font-size: 16px; color: var(--primary); width: 30px; flex: none; }
+  .points li em { font-style: normal; color: var(--muted); }
+
+  /* LGPD deadline timeline */
+  .timeline { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 38px; }
+  .timeline::before { content: ""; position: absolute; left: 13px; right: 33%; top: 13px; height: 2px; background: linear-gradient(90deg, var(--primary), var(--border-strong)); }
+  .tl { position: relative; padding-right: 24px; }
+  .tl .dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--primary); background: var(--bg); }
+  .tl.first .dot { background: var(--primary); }
+  .tl .when { margin-top: 18px; font-family: var(--display); font-weight: 600; font-size: 40px; line-height: 1; }
+  .tl .what { margin-top: 10px; font-size: 21px; line-height: 1.4; color: var(--muted); }
+
+  /* closing slide */
+  .chips { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 38px; }
+  .chip { padding: 10px 16px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--surface); font-family: var(--mono); font-size: 19px; color: var(--muted); }
+  .big-chain { margin-top: 64px; }
+  .big-chain .stage { font-size: 19px; gap: 14px; color: var(--fg); }
+  .big-chain .stage i { width: 40px; height: 40px; font-size: 18px; border-color: var(--primary); background: var(--primary); color: #0b1020; }
+  .big-chain .wire { background: var(--primary); }
+  .thumbs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 40px; }
+  .thumbs figure { position: relative; margin: 0; height: 230px; overflow: hidden; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface); }
+  .thumbs img { display: block; width: 260%; margin-left: -4%; }
+  .thumbs figure::after { content: ""; position: absolute; inset: 40% 0 0; background: linear-gradient(transparent, var(--bg) 85%); }
+  .thumbs figcaption { position: absolute; z-index: 1; left: 14px; bottom: 12px; font-family: var(--mono); font-size: 15px; letter-spacing: .06em; text-transform: uppercase; color: var(--fg); }
+  .cta { margin-top: 40px; padding: 28px 32px; border: 1px solid rgba(122,162,255,.35); border-radius: 12px; background: rgba(122,162,255,.08); font-size: 28px; line-height: 1.4; }
+  .cta b { color: var(--primary); }
+</style>
+</head>
+<body>
+
+<!-- reusable bits are inlined per slide on purpose: the file is a print layout, not an app -->
+
+<!-- 01 cover -->
+<section class="slide cover" data-name="capa">
+  <div class="top">
+    <div class="brand"><svg width="54" height="14" viewBox="0 0 54 14"><path d="M7 7h40" stroke="#343c4a" stroke-width="1.5"/><circle cx="7" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="20.3" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="33.6" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="47" cy="7" r="5" fill="#7aa2ff"/></svg>SOC Investigation Lab</div>
+    <div class="count">01 / 09</div>
+  </div>
+  <div class="eyebrow">Simulador de SOC · open source</div>
+  <h1>Investigue o ataque.<br><span class="hl">Depois conserte a detecção.</span></h1>
+  <p class="lead">Um laboratório de SOC N1/N2 que fecha o ciclo do <b>purple team</b>: da investigação ao ajuste da regra, com prova de que nenhum ataque escapou.</p>
+  <ul class="points">
+    <li><span>01</span>Teste de regressão de detecção <em>· antes/depois de cada ajuste</em></li>
+    <li><span>02</span>Modo plantão <em>· ataques reais no meio do ruído</em></li>
+    <li><span>03</span>Regras Sigma escritas por você <em>· direto no motor</em></li>
+    <li><span>04</span>Contexto brasileiro <em>· golpe do PIX e prazos da LGPD</em></li>
+    <li><span>05</span>Cenários a partir de logs reais <em>· anonimizados</em></li>
+  </ul>
+  <div class="shot" style="margin-top: 44px">
+    <div class="bar"><b>Overview</b> · telemetria → detecção → incidente → decisão<span class="sim">SIMULATION</span></div>
+    <div class="view"><img src="raw/overview.png" alt=""></div>
+  </div>
+</section>
+
+<!-- 02 regression -->
+<section class="slide" data-name="teste-de-regressao">
+  <div class="top">
+    <div class="brand"><svg width="54" height="14" viewBox="0 0 54 14"><path d="M7 7h40" stroke="#343c4a" stroke-width="1.5"/><circle cx="7" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="20.3" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="33.6" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="47" cy="7" r="5" fill="#7aa2ff"/></svg>SOC Investigation Lab</div>
+    <div class="count">02 / 09</div>
+  </div>
+  <div class="chain"><div class="stage"><i>1</i>Ingest</div><div class="wire"></div><div class="stage on"><i>2</i>Detect</div><div class="wire"></div><div class="stage"><i>3</i>Respond</div><div class="wire"></div><div class="stage"><i>4</i>Report</div></div>
+  <div class="eyebrow">01 · Teste de regressão de detecção</div>
+  <h1>Tirou o falso positivo.<br><span class="bad">Perdeu um ataque.</span></h1>
+  <p class="lead">Antes de salvar um ajuste, o lab reexecuta <b>todos os cenários</b> com a regra atual e com a proposta. Limiar da força bruta de 6 para 15: o ruído cai, o password spraying passa, e <b>o teste reprova</b>.</p>
+  <div class="shot">
+    <div class="bar"><b>Detection rules</b> › LAB-002 › regression test<span class="sim">SIMULATION</span></div>
+    <div class="view"><img src="raw/regression.png" alt="" style="--w: 100%"></div>
+  </div>
+</section>
+
+<!-- 03 shift (live) -->
+<section class="slide" data-name="modo-plantao">
+  <div class="top">
+    <div class="brand"><svg width="54" height="14" viewBox="0 0 54 14"><path d="M7 7h40" stroke="#343c4a" stroke-width="1.5"/><circle cx="7" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="20.3" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="33.6" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="47" cy="7" r="5" fill="#7aa2ff"/></svg>SOC Investigation Lab</div>
+    <div class="count">03 / 09</div>
+  </div>
+  <div class="chain"><div class="stage"><i>1</i>Ingest</div><div class="wire"></div><div class="stage"><i>2</i>Detect</div><div class="wire"></div><div class="stage on"><i>3</i>Respond</div><div class="wire"></div><div class="stage"><i>4</i>Report</div></div>
+  <div class="eyebrow">02 · Modo plantão</div>
+  <h1>20 minutos.<br>Ataques reais <span class="hl">escondidos no ruído.</span></h1>
+  <p class="lead">Uma fila cronometrada mistura intrusões, atividade autorizada e falsos positivos. Cada alerta pede <b>veredito e justificativa</b>, contra o SLA da severidade.</p>
+  <div class="shot">
+    <div class="bar"><b>Shift</b> › fila ao vivo<span class="sim">SIMULATION</span></div>
+    <div class="view"><img src="raw/shift-live.png" alt="" style="--y: -11%"></div>
+  </div>
+</section>
+
+<!-- 04 shift (debrief) -->
+<section class="slide" data-name="debriefing-do-plantao">
+  <div class="top">
+    <div class="brand"><svg width="54" height="14" viewBox="0 0 54 14"><path d="M7 7h40" stroke="#343c4a" stroke-width="1.5"/><circle cx="7" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="20.3" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="33.6" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="47" cy="7" r="5" fill="#7aa2ff"/></svg>SOC Investigation Lab</div>
+    <div class="count">04 / 09</div>
+  </div>
+  <div class="chain"><div class="stage"><i>1</i>Ingest</div><div class="wire"></div><div class="stage"><i>2</i>Detect</div><div class="wire"></div><div class="stage on"><i>3</i>Respond</div><div class="wire"></div><div class="stage"><i>4</i>Report</div></div>
+  <div class="eyebrow">02 · Modo plantão · debriefing</div>
+  <h1>Fechar um ataque como ruído <span class="bad">custa caro.</span></h1>
+  <p class="lead">No fim, a verdade de cada alerta aparece. Acurácia vale 60% da nota e um ataque fechado como ruído <b>zera aquele alerta</b>. Escalar ruído para resposta a incidentes também tira pontos.</p>
+  <div class="stats">
+    <div class="stat"><div class="k">Nota do plantão</div><div class="v">83<span style="color:var(--subtle);font-size:30px">/100</span></div></div>
+    <div class="stat"><div class="k">Ataques perdidos</div><div class="v crit">1</div></div>
+    <div class="stat"><div class="k">Notas verificáveis</div><div class="v good">100%</div></div>
+  </div>
+  <div class="shot fit">
+    <div class="bar"><b>Shift</b> › debriefing<span class="sim">SIMULATION</span></div>
+    <div class="view"><img src="raw/shift-debrief.png" alt=""></div>
+  </div>
+  <div class="lesson"><span>O erro mais caro do plantão</span>A escalada de privilégio via sudo foi fechada como falso positivo. Ela fazia parte da mesma intrusão SSH: <b>2/10 pontos</b> e um ataque que seguiria ativo.</div>
+  <div class="foot"><span>Nota = acurácia 60% · SLA da severidade 20% · justificativa verificável 20%</span></div>
+</section>
+
+<!-- 05 sigma -->
+<section class="slide" data-name="regras-sigma">
+  <div class="top">
+    <div class="brand"><svg width="54" height="14" viewBox="0 0 54 14"><path d="M7 7h40" stroke="#343c4a" stroke-width="1.5"/><circle cx="7" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="20.3" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="33.6" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="47" cy="7" r="5" fill="#7aa2ff"/></svg>SOC Investigation Lab</div>
+    <div class="count">05 / 09</div>
+  </div>
+  <div class="chain"><div class="stage"><i>1</i>Ingest</div><div class="wire"></div><div class="stage on"><i>2</i>Detect</div><div class="wire"></div><div class="stage"><i>3</i>Respond</div><div class="wire"></div><div class="stage"><i>4</i>Report</div></div>
+  <div class="eyebrow">03 · Regras Sigma escritas por você</div>
+  <h1>Escreva em Sigma.<br>Teste nos eventos.<br><span class="hl">Coloque no motor.</span></h1>
+  <p class="lead">A regra passa por <b>dry-run</b> nos eventos do lab, entra no motor ao lado das 18 nativas, participa do teste de regressão e exporta para qualquer SIEM.</p>
+  <div class="shot">
+    <div class="bar"><b>Detection rules</b> › new Sigma rule<span class="sim">SIMULATION</span></div>
+    <div class="view"><img src="raw/sigma.png" alt="" style="--y: -28%"></div>
+  </div>
+</section>
+
+<!-- 06 PIX -->
+<section class="slide" data-name="golpe-do-pix">
+  <div class="top">
+    <div class="brand"><svg width="54" height="14" viewBox="0 0 54 14"><path d="M7 7h40" stroke="#343c4a" stroke-width="1.5"/><circle cx="7" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="20.3" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="33.6" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="47" cy="7" r="5" fill="#7aa2ff"/></svg>SOC Investigation Lab</div>
+    <div class="count">06 / 09</div>
+  </div>
+  <div class="chain"><div class="stage"><i>1</i>Ingest</div><div class="wire"></div><div class="stage on"><i>2</i>Detect</div><div class="wire"></div><div class="stage"><i>3</i>Respond</div><div class="wire"></div><div class="stage"><i>4</i>Report</div></div>
+  <div class="eyebrow">04 · Contexto brasileiro</div>
+  <h1>O golpe do PIX,<br><span class="hl">no log do internet banking.</span></h1>
+  <p class="lead">Dispositivo nunca visto, troca do telefone, favorecido novo e duas transferências em 3 minutos. A regra <b>LAB-018</b> correlaciona a sequência inteira.</p>
+  <div class="shot">
+    <div class="bar"><b>Alert</b> › LAB-018 · account takeover followed by PIX transfer<span class="sim">SIMULATION</span></div>
+    <div class="view"><img src="raw/pix-alert.png" alt="" style="--y: -4%"></div>
+  </div>
+</section>
+
+<!-- 07 LGPD -->
+<section class="slide" data-name="prazo-anpd">
+  <div class="top">
+    <div class="brand"><svg width="54" height="14" viewBox="0 0 54 14"><path d="M7 7h40" stroke="#343c4a" stroke-width="1.5"/><circle cx="7" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="20.3" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="33.6" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="47" cy="7" r="5" fill="#7aa2ff"/></svg>SOC Investigation Lab</div>
+    <div class="count">07 / 09</div>
+  </div>
+  <div class="chain"><div class="stage"><i>1</i>Ingest</div><div class="wire"></div><div class="stage"><i>2</i>Detect</div><div class="wire"></div><div class="stage"><i>3</i>Respond</div><div class="wire"></div><div class="stage on"><i>4</i>Report</div></div>
+  <div class="eyebrow">04 · Contexto brasileiro · LGPD</div>
+  <h1>E o prazo da ANPD<br><span class="hl">já sai no relatório.</span></h1>
+  <p class="lead">Marcou no incidente que houve dados pessoais afetados? O relatório calcula a comunicação à ANPD e aos titulares, conforme a <b>Resolução CD/ANPD nº 15/2024</b>.</p>
+  <div class="timeline">
+    <div class="tl first"><div class="dot"></div><div class="when">Dia 0</div><div class="what">Primeira detecção: a ciência do incidente</div></div>
+    <div class="tl"><div class="dot"></div><div class="when">3 dias úteis</div><div class="what">Comunicar a ANPD e os titulares dos dados</div></div>
+    <div class="tl"><div class="dot"></div><div class="when">+20 dias úteis</div><div class="what">Complementar a comunicação com as informações que faltaram</div></div>
+  </div>
+  <div class="shot fit" style="margin-top: 46px">
+    <div class="bar"><b>Incident report</b> › 09 LGPD notification<span class="sim">SIMULATION</span></div>
+    <div class="view" style="padding: 4px 28px 22px; background: #151920"><img src="raw/lgpd.png" alt=""></div>
+  </div>
+  <div class="foot"><span>Referência didática, não orientação jurídica. Feriados não entram na conta.</span></div>
+</section>
+
+<!-- 08 scenarios from logs -->
+<section class="slide" data-name="cenarios-de-logs-reais">
+  <div class="top">
+    <div class="brand"><svg width="54" height="14" viewBox="0 0 54 14"><path d="M7 7h40" stroke="#343c4a" stroke-width="1.5"/><circle cx="7" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="20.3" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="33.6" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="47" cy="7" r="5" fill="#7aa2ff"/></svg>SOC Investigation Lab</div>
+    <div class="count">08 / 09</div>
+  </div>
+  <div class="chain"><div class="stage on"><i>1</i>Ingest</div><div class="wire"></div><div class="stage"><i>2</i>Detect</div><div class="wire"></div><div class="stage"><i>3</i>Respond</div><div class="wire"></div><div class="stage"><i>4</i>Report</div></div>
+  <div class="eyebrow">05 · Cenários a partir de logs reais</div>
+  <h1>Seu log real vira<br><span class="hl">um cenário de treino.</span></h1>
+  <p class="lead">Uma consulta no Log Explorer seleciona os eventos. O lab <b>anonimiza</b> contas, hosts e IPs, calcula o gabarito com o motor e exporta em JSON para a turma.</p>
+  <div class="shot">
+    <div class="bar"><b>Log explorer</b> › save as scenario<span class="sim">SIMULATION</span></div>
+    <div class="view"><img src="raw/scenario-builder.png" alt="" style="--y: -42%"></div>
+  </div>
+</section>
+
+<!-- 09 closing -->
+<section class="slide" data-name="open-source">
+  <div class="top">
+    <div class="brand"><svg width="54" height="14" viewBox="0 0 54 14"><path d="M7 7h40" stroke="#343c4a" stroke-width="1.5"/><circle cx="7" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="20.3" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="33.6" cy="7" r="5" fill="#0f1216" stroke="#7aa2ff" stroke-width="1.5"/><circle cx="47" cy="7" r="5" fill="#7aa2ff"/></svg>SOC Investigation Lab</div>
+    <div class="count">09 / 09</div>
+  </div>
+  <div class="chain big-chain"><div class="stage"><i>1</i>Ingest</div><div class="wire"></div><div class="stage"><i>2</i>Detect</div><div class="wire"></div><div class="stage"><i>3</i>Respond</div><div class="wire"></div><div class="stage"><i>4</i>Report</div></div>
+  <div class="eyebrow">Open source · offline · dados 100% sintéticos</div>
+  <h1>Baixe, rode e quebre<br><span class="hl">as regras de propósito.</span></h1>
+  <p class="lead">App desktop para <b>Windows e Linux</b>, sem conta, sem nuvem e sem chave de API. Todos os eventos usam uma empresa fictícia e faixas de IP de documentação.</p>
+  <div class="stats">
+    <div class="stat"><div class="k">Regras nativas</div><div class="v">18</div></div>
+    <div class="stat"><div class="k">Cenários</div><div class="v">11</div></div>
+    <div class="stat"><div class="k">Testes automatizados</div><div class="v">184</div></div>
+  </div>
+  <div class="chips">
+    <span class="chip">MITRE ATT&amp;CK</span><span class="chip">Sigma</span><span class="chip">Sysmon</span><span class="chip">Windows 4624/4625</span><span class="chip">auth.log</span>
+    <span class="chip">Python · FastAPI</span><span class="chip">Next.js · TypeScript</span><span class="chip">SQLite</span><span class="chip">Electron</span>
+  </div>
+  <div class="thumbs">
+    <figure><img src="raw/regression.png" alt=""><figcaption>Regressão</figcaption></figure>
+    <figure><img src="raw/shift-live.png" alt="" style="margin-top: -6%"><figcaption>Plantão</figcaption></figure>
+    <figure><img src="raw/sigma.png" alt=""><figcaption>Sigma</figcaption></figure>
+    <figure><img src="raw/pix-alert.png" alt="" style="margin-top: -3%"><figcaption>PIX · LGPD</figcaption></figure>
+  </div>
+  <div class="cta">Link do repositório no primeiro comentário.<br><b>Trabalha em SOC ou ensina blue team?</b> Seu feedback vale muito.</div>
+</section>
+
+</body>
+</html>
