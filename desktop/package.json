@@ -9,6 +9,8 @@
   },
   "private": true,
   "license": "MIT",
+  "homepage": "https://github.com/orleans-samai/soc-investigation-lab",
+  "repository": "github:orleans-samai/soc-investigation-lab",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
