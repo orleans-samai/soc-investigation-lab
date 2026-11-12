@@ -50,8 +50,6 @@ async function capture(browser) {
     for (const [id, seed] of [["ssh-bruteforce-compromise", 3], ["windows-password-spray", 4], ["lsass-credential-dumping", 5], ["powershell-download-cradle", 7]]) {
       await api("/simulations/run", { scenario_id: id, seed });
     }
-    const pix = (await api("/simulations/run", { scenario_id: "pix-account-takeover", seed: 4 })).run;
-    await api(`/incidents/${pix.incident_ids[0]}`, { personal_data: true }, "PATCH");
 
     mkdirSync(rawDir, { recursive: true });
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 2, colorScheme: "dark" });
@@ -77,6 +75,10 @@ async function capture(browser) {
     // Cover: the overview with its signal chain.
     await go("/?", 1000);
     await mainClip("overview", 1000);
+
+    // Run the PIX case only after the overview is captured, so the general images show no Brazil-specific alert.
+    const pix = (await api("/simulations/run", { scenario_id: "pix-account-takeover", seed: 4 })).run;
+    await api(`/incidents/${pix.incident_ids[0]}`, { personal_data: true }, "PATCH");
 
     // 1. Regression test that fails a tuning change.
     await go("/rules/?rule=LAB-002", 1750);
